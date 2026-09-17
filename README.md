@@ -8,7 +8,7 @@ This repository is the independently deployable MyTRS Shell product. It owns the
 - `shell-war/` — WAR packaging module containing the production Angular output.
 - `pom.xml` — standalone Maven reactor for building `shell.war`.
 
-The Shell loads the Health child MFE from the separately deployed Health application at `/mobile-poc/wss-apps/health/remoteEntry.js`. The Health repository is not a build dependency; the runtime contract is the remote entry URL and the `./Component` exposure.
+The Shell loads the Health child MFE from the separately deployed Health application at `/mobile-poc/wss-apps/health/remoteEntry.js`. The Health repository is not a build dependency; the runtime contract is the remote entry URL and the `./Component` exposure. Pension’s browser and REST public routes are deliberately converged by NGINX on the same `mobile-poc.war` deployment so the unchanged Struts/JSP actions and JAX-RS resource share `PensionMockStore`.
 
 ## Build and deploy
 
