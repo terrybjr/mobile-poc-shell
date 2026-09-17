@@ -9,6 +9,7 @@ import { MobileAuthService } from './mobile/mobile-auth.service';
 declare global {
   interface Window {
     __healthAuth?: { authenticated: boolean; token: string };
+    __mobileAuth?: { authenticated: boolean; token: string; tokenType: string; expiresIn: number };
   }
 }
 

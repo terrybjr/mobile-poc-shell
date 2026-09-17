@@ -10,10 +10,15 @@ import { MobileAuthService } from './mobile-auth.service';
 })
 export class MobileLoginComponent {
   protected readonly auth = inject(MobileAuthService);
+  protected username = '';
+  protected password = '';
   protected rememberDevice = true;
 
   signIn(): void {
-    void this.auth.beginLogin(this.rememberDevice);
+    const username = this.username;
+    const password = this.password;
+    this.password = '';
+    void this.auth.beginLogin(username, password, this.rememberDevice);
   }
 
   unlock(): void {

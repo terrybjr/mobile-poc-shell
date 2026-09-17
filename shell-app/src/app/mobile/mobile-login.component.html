@@ -7,7 +7,7 @@
   <section class="login-card" aria-labelledby="login-title">
     <div class="eyebrow">SECURE MEMBER ACCESS</div>
     <h1 id="login-title">Your retirement,<br /><span>always with you.</span></h1>
-    <p class="intro">Sign in to your private MyTRS mobile experience.</p>
+    <p class="intro">Sign in directly to your private MyTRS mobile experience.</p>
 
     @if (auth.hasSavedSession()) {
       <button class="primary-action biometric-action" type="button" [disabled]="auth.busy()" (click)="unlock()">
@@ -18,11 +18,15 @@
       <div class="divider"><span>or</span></div>
     }
 
-    <button class="primary-action" type="button" [disabled]="auth.busy()" (click)="signIn()">
-      <span class="key-icon">→</span>
-      <span><strong>Sign in securely</strong><small>Open the secure TRS sign-in sheet</small></span>
-      <span class="chevron">›</span>
-    </button>
+    <form class="credentials" (ngSubmit)="signIn()" novalidate>
+      <label>Username<input name="username" type="text" autocomplete="username" autocapitalize="none" [(ngModel)]="username" required /></label>
+      <label>Password<input name="password" type="password" autocomplete="current-password" [(ngModel)]="password" required /></label>
+      <button class="primary-action" type="submit" [disabled]="auth.busy()">
+        <span class="key-icon">→</span>
+        <span><strong>Sign in securely</strong><small>Authenticate in the MyTRS app</small></span>
+        <span class="chevron">›</span>
+      </button>
+    </form>
 
     <label class="remember-option">
       <input type="checkbox" [(ngModel)]="rememberDevice" />
@@ -30,7 +34,7 @@
     </label>
 
     @if (auth.busy()) {
-      <p class="status" role="status">Opening secure TRS sign-in…</p>
+      <p class="status" role="status">Signing in to MyTRS…</p>
     }
     @if (auth.error()) {
       <p class="error" role="alert">{{ auth.error() }}</p>

@@ -1,5 +1,3 @@
-import { App as CapacitorApp } from '@capacitor/app';
-import { Browser } from '@capacitor/browser';
 import { Capacitor } from '@capacitor/core';
 import { BiometricAuth, BiometryType } from '@aparajita/capacitor-biometric-auth';
 import { KeychainAccess, SecureStorage } from '@aparajita/capacitor-secure-storage';
@@ -9,6 +7,7 @@ interface TokenResponse {
   access_token: string;
   refresh_token?: string;
   id_token?: string;
+  token_type?: string;
   expires_in?: number;
 }
 
@@ -20,7 +19,6 @@ interface StoredSession {
 const KEYCLOAK_BASE = 'https://brianthedeveloper.com';
 const REALM = 'trs-demo';
 const CLIENT_ID = 'health-portal';
-const REDIRECT_URI = 'com.brianthedeveloper.mobilepoc.health://oauth/callback';
 const SESSION_KEY = 'mytrs.mobile.session';
 
 @Injectable({ providedIn: 'root' })
@@ -33,10 +31,6 @@ export class MobileAuthService {
   readonly biometricLabel = signal('Face ID');
   readonly memberName = signal('Jordan Davis');
   readonly online = signal(typeof navigator === 'undefined' ? true : navigator.onLine);
-
-  private oauthState = '';
-  private codeVerifier = '';
-  private rememberDevice = true;
 
   async initialize(): Promise<void> {
     if (!Capacitor.isNativePlatform()) {
@@ -63,43 +57,35 @@ export class MobileAuthService {
     }
 
     this.hasSavedSession.set((await this.readStoredSession()) !== null);
-    await CapacitorApp.addListener('appUrlOpen', ({ url }) => {
-      if (url.startsWith('com.brianthedeveloper.mobilepoc.health://oauth/callback')) {
-        void this.handleCallback(url);
-      }
-    });
     this.initialized.set(true);
   }
 
-  async beginLogin(rememberDevice: boolean): Promise<void> {
+  async beginLogin(username: string, password: string, rememberDevice: boolean): Promise<void> {
     this.error.set('');
     this.busy.set(true);
-    this.rememberDevice = rememberDevice;
-    this.oauthState = this.randomString(32);
-    this.codeVerifier = this.randomString(64);
 
     try {
-      const challenge = await this.createCodeChallenge(this.codeVerifier);
-      const authorizeUrl = new URL(`${KEYCLOAK_BASE}/realms/${REALM}/protocol/openid-connect/auth`);
-      authorizeUrl.search = new URLSearchParams({
-        client_id: CLIENT_ID,
-        redirect_uri: REDIRECT_URI,
-        response_type: 'code',
-        scope: 'openid profile',
-        state: this.oauthState,
-        code_challenge: challenge,
-        code_challenge_method: 'S256'
-      }).toString();
-      // Keep OAuth inside the native app's secure browser sheet. The Capacitor
-      // Browser plugin uses SFSafariViewController on iOS; this is deliberately
-      // not an embedded WebView and never puts the member password in our app.
-      await Browser.open({
-        url: authorizeUrl.toString(),
-        presentationStyle: 'popover',
-        toolbarColor: '#0b3d62'
+      if (!username.trim() || !password) {
+        throw new Error('Credentials are required.');
+      }
+      const response = await fetch(`${KEYCLOAK_BASE}/realms/${REALM}/protocol/openid-connect/token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          grant_type: 'password',
+          client_id: CLIENT_ID,
+          username: username.trim(),
+          password,
+          scope: 'openid profile'
+        })
       });
+      const tokens = (await response.json()) as TokenResponse & { error?: string };
+      if (!response.ok || !tokens.access_token) {
+        throw new Error(tokens.error ?? 'Direct mobile sign-in failed.');
+      }
+      await this.activateSession(tokens, this.claimMemberName(tokens.id_token), rememberDevice);
     } catch {
-      this.error.set('Unable to open the secure TRS sign-in.');
+      this.error.set('The username or password could not be verified.');
       this.busy.set(false);
     }
   }
@@ -130,48 +116,9 @@ export class MobileAuthService {
     await SecureStorage.remove(SESSION_KEY).catch(() => false);
     this.hasSavedSession.set(false);
     this.authenticated.set(false);
+    delete window.__mobileAuth;
+    delete window.__healthAuth;
     this.error.set('');
-  }
-
-  private async handleCallback(url: string): Promise<void> {
-    const callback = new URL(url);
-    const error = callback.searchParams.get('error');
-    const code = callback.searchParams.get('code');
-    const state = callback.searchParams.get('state');
-    await Browser.close().catch(() => undefined);
-
-    if (error) {
-      this.error.set('TRS sign-in was cancelled.');
-      this.busy.set(false);
-      return;
-    }
-    if (!code || state !== this.oauthState) {
-      this.error.set('The TRS sign-in response could not be verified.');
-      this.busy.set(false);
-      return;
-    }
-
-    try {
-      const response = await fetch(`${KEYCLOAK_BASE}/realms/${REALM}/protocol/openid-connect/token`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          grant_type: 'authorization_code',
-          client_id: CLIENT_ID,
-          code,
-          code_verifier: this.codeVerifier,
-          redirect_uri: REDIRECT_URI
-        })
-      });
-      if (!response.ok) {
-        throw new Error('Token exchange failed.');
-      }
-      const tokens = (await response.json()) as TokenResponse;
-      await this.activateSession(tokens, this.claimMemberName(tokens.id_token), this.rememberDevice);
-    } catch {
-      this.error.set('TRS sign-in completed, but the mobile session could not be established.');
-      this.busy.set(false);
-    }
   }
 
   private async exchangeRefreshToken(refreshToken: string): Promise<TokenResponse> {
@@ -192,6 +139,8 @@ export class MobileAuthService {
     }
     const name = this.claimMemberName(tokens.id_token) || fallbackName || 'Jordan Davis';
     this.memberName.set(name);
+    const snapshot = { authenticated: true, token: tokens.access_token, tokenType: tokens.token_type ?? 'Bearer', expiresIn: tokens.expires_in ?? 0 };
+    window.__mobileAuth = snapshot;
     window.__healthAuth = { authenticated: true, token: tokens.access_token };
     window.dispatchEvent(new Event('health-auth-ready'));
 
@@ -238,20 +187,4 @@ export class MobileAuthService {
     }
   }
 
-  private randomString(length: number): string {
-    const bytes = new Uint8Array(length);
-    crypto.getRandomValues(bytes);
-    return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
-  }
-
-  private async createCodeChallenge(verifier: string): Promise<string> {
-    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
-    return this.base64Url(new Uint8Array(digest));
-  }
-
-  private base64Url(bytes: Uint8Array): string {
-    let binary = '';
-    bytes.forEach((byte) => (binary += String.fromCharCode(byte)));
-    return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-  }
 }

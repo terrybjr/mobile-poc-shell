@@ -4,7 +4,7 @@
 
 The Capacitor build is the native entry point for the Shell. Native builds render only the dedicated `src/app/mobile/` package: a phone-focused TRS sign-in view and a secure member home. The hosted browser build keeps the existing Shell header and `/myhealth` Health MFE route; it never renders the mobile views.
 
-The first mobile sign-in uses Authorization Code + PKCE through the system browser and returns to `com.brianthedeveloper.mobilepoc.health://oauth/callback`. When the member chooses “Remember this device,” only the refresh token is stored in the iOS Keychain through `@aparajita/capacitor-secure-storage`; the next sign-in can unlock that session with Face ID or the device passcode through `@aparajita/capacitor-biometric-auth`. Add the custom callback to the `health-portal` Keycloak client before testing the native app.
+The mobile sign-in is an app-owned username/password form. It calls the legacy Keycloak standard token endpoint with the public `health-portal` client using Direct Access Grants (Resource Owner Password Credentials), receives access and refresh tokens, and immediately clears the password field. When the member chooses “Remember this device,” only the refresh token is stored in the iOS Keychain through `@aparajita/capacitor-secure-storage`; the next sign-in uses Face ID or the device passcode through `@aparajita/capacitor-biometric-auth` to authorize a refresh-token exchange. No Safari window, WebView, redirect, client secret, or password persistence is involved in the native flow.
 
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.3.31.
 

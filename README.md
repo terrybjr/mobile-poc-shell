@@ -32,13 +32,13 @@ Deploy it as the `shell` application on WildFly. The existing reverse proxy expo
 
 The mobile product is a dedicated product surface of this Shell, not a second web portal. Native-only presentation and device behavior live in `shell-app/src/app/mobile/`. The package owns the phone login, PKCE callback, Keychain-backed session storage, biometric unlock, mobile navigation, and the intentionally limited member landing page. Mobile MFEs use the Shell AuthService access token for approved REST calls; the native product intentionally does not load the legacy Pension/JSP WebView or depend on its cookie. Health is the first mobile REST feature, and a Pension REST MFE can be added after Pension services are exposed. The standard browser experience remains the web Shell header and `/myhealth` Health MFE route.
 
-The native Keycloak callback is `com.brianthedeveloper.mobilepoc.health://oauth/callback`. The public `health-portal` client must contain that callback and use Authorization Code + PKCE without a client secret.
+The browser callback remains `https://brianthedeveloper.com/pension/shell/`. The native Shell does not use a Keycloak redirect callback; it uses the public `health-portal` client with Direct Access Grants and the standard token endpoint. No client secret is embedded in the mobile bundle.
 
 ## Secure login presentation
 
-The branded mobile login page remains the app-owned entry point. When the member taps “Sign in securely,” the Shell opens Keycloak through `@capacitor/browser` using its iOS `popover` presentation and TRS toolbar color. This presents the OAuth page as an in-app secure browser sheet rather than navigating the app's WebView or launching a separate Safari tab. The iOS Browser plugin uses `SFSafariViewController`, so Keycloak still owns password and MFA entry while the Shell receives only the PKCE authorization callback. Returning members can use the saved Keychain session and Face ID without opening the sign-in sheet.
+The branded mobile login page is the app-owned entry point. The username and password fields call Keycloak's standard token endpoint through the public `health-portal` client with Direct Access Grants; the native app receives only tokens and clears the password field. Returning members can use the saved Keychain refresh token after Face ID or device-passcode authorization. The browser website continues to use its separate Keycloak redirect flow.
 
-This is intentionally not a custom username/password form. A future native authentication-session plugin can replace the browser presentation without changing the Shell login screen, Keycloak client, callback URI, or token-storage boundary.
+This is a POC use of Keycloak's legacy Direct Access Grant pipeline. It is intentionally limited to the native mobile product and should be replaced by a first-party authorization service or brokered native authentication flow if the product moves beyond the POC.
 
 ## Capacitor workflow
 
