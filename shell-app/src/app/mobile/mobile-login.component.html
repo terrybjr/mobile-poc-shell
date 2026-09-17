@@ -20,7 +20,7 @@
 
     <button class="primary-action" type="button" [disabled]="auth.busy()" (click)="signIn()">
       <span class="key-icon">→</span>
-      <span><strong>Sign in securely</strong><small>Continue with TRS sign-in</small></span>
+      <span><strong>Sign in securely</strong><small>Open the secure TRS sign-in sheet</small></span>
       <span class="chevron">›</span>
     </button>
 
@@ -30,7 +30,7 @@
     </label>
 
     @if (auth.busy()) {
-      <p class="status" role="status">Connecting securely…</p>
+      <p class="status" role="status">Opening secure TRS sign-in…</p>
     }
     @if (auth.error()) {
       <p class="error" role="alert">{{ auth.error() }}</p>

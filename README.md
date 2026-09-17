@@ -34,6 +34,12 @@ The mobile product is a dedicated product surface of this Shell, not a second we
 
 The native Keycloak callback is `com.brianthedeveloper.mobilepoc.health://oauth/callback`. The public `health-portal` client must contain that callback and use Authorization Code + PKCE without a client secret.
 
+## Secure login presentation
+
+The branded mobile login page remains the app-owned entry point. When the member taps “Sign in securely,” the Shell opens Keycloak through `@capacitor/browser` using its iOS `popover` presentation and TRS toolbar color. This presents the OAuth page as an in-app secure browser sheet rather than navigating the app's WebView or launching a separate Safari tab. The iOS Browser plugin uses `SFSafariViewController`, so Keycloak still owns password and MFA entry while the Shell receives only the PKCE authorization callback. Returning members can use the saved Keychain session and Face ID without opening the sign-in sheet.
+
+This is intentionally not a custom username/password form. A future native authentication-session plugin can replace the browser presentation without changing the Shell login screen, Keycloak client, callback URI, or token-storage boundary.
+
 ## Capacitor workflow
 
 Android:

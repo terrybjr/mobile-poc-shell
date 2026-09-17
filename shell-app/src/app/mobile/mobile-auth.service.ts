@@ -90,7 +90,14 @@ export class MobileAuthService {
         code_challenge: challenge,
         code_challenge_method: 'S256'
       }).toString();
-      await Browser.open({ url: authorizeUrl.toString(), presentationStyle: 'fullscreen' });
+      // Keep OAuth inside the native app's secure browser sheet. The Capacitor
+      // Browser plugin uses SFSafariViewController on iOS; this is deliberately
+      // not an embedded WebView and never puts the member password in our app.
+      await Browser.open({
+        url: authorizeUrl.toString(),
+        presentationStyle: 'popover',
+        toolbarColor: '#0b3d62'
+      });
     } catch {
       this.error.set('Unable to open the secure TRS sign-in.');
       this.busy.set(false);
