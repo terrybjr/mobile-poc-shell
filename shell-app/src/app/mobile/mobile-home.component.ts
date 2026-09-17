@@ -35,7 +35,7 @@ export class MobileHomeComponent implements OnInit {
       this.pensionLoading.set(false);
       return;
     }
-    this.http.get<PensionSummary>('/mobile-poc/api/pension', {
+    this.http.get<PensionSummary>('/pension/api/pension', {
       headers: { Authorization: `Bearer ${token}` }
     }).subscribe({
       next: data => { this.pension.set(data); this.pensionLoading.set(false); },

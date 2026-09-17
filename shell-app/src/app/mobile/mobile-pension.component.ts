@@ -50,7 +50,7 @@ export class MobilePensionComponent implements OnInit {
     const token = window.__mobileAuth?.token;
     if (!token) { this.error.set('Your mobile session is no longer available.'); return; }
     this.busy.set(true); this.saved.set(false); this.error.set('');
-    this.http.put<PensionSummary>('/mobile-poc/api/pension', this.draft, this.options(token)).subscribe({
+    this.http.put<PensionSummary>('/pension/api/pension', this.draft, this.options(token)).subscribe({
       next: data => { this.apply(data); this.saved.set(true); this.busy.set(false); },
       error: () => { this.error.set('The mocked Pension data could not be updated.'); this.busy.set(false); }
     });
@@ -60,7 +60,7 @@ export class MobilePensionComponent implements OnInit {
     const token = window.__mobileAuth?.token;
     if (!token) { this.error.set('Your mobile session is no longer available.'); return; }
     this.busy.set(true); this.saved.set(false); this.error.set('');
-    this.http.delete<PensionSummary>('/mobile-poc/api/pension', this.options(token)).subscribe({
+    this.http.delete<PensionSummary>('/pension/api/pension', this.options(token)).subscribe({
       next: data => { this.apply(data); this.saved.set(true); this.busy.set(false); },
       error: () => { this.error.set('The mocked Pension data could not be reset.'); this.busy.set(false); }
     });
@@ -70,7 +70,7 @@ export class MobilePensionComponent implements OnInit {
     const token = window.__mobileAuth?.token;
     this.loading.set(true); this.error.set('');
     if (!token) { this.error.set('Your mobile session is no longer available.'); this.loading.set(false); return; }
-    this.http.get<PensionSummary>('/mobile-poc/api/pension', this.options(token)).subscribe({
+    this.http.get<PensionSummary>('/pension/api/pension', this.options(token)).subscribe({
       next: data => { this.apply(data); this.loading.set(false); },
       error: () => { this.error.set('Pension data is temporarily unavailable.'); this.loading.set(false); }
     });
