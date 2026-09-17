@@ -30,7 +30,7 @@ Deploy it as the `shell` application on WildFly. The existing reverse proxy expo
 
 ## Mobile product boundary
 
-The mobile product is a dedicated product surface of this Shell, not a second web portal. Native-only presentation and device behavior live in `shell-app/src/app/mobile/`. The package owns the phone login, PKCE callback, Keychain-backed session storage, biometric unlock, mobile navigation, and the intentionally limited member landing page. The standard browser experience remains the web Shell header and `/myhealth` Health MFE route.
+The mobile product is a dedicated product surface of this Shell, not a second web portal. Native-only presentation and device behavior live in `shell-app/src/app/mobile/`. The package owns the phone login, PKCE callback, Keychain-backed session storage, biometric unlock, mobile navigation, and the intentionally limited member landing page. Mobile MFEs use the Shell AuthService access token for approved REST calls; the native product intentionally does not load the legacy Pension/JSP WebView or depend on its cookie. Health is the first mobile REST feature, and a Pension REST MFE can be added after Pension services are exposed. The standard browser experience remains the web Shell header and `/myhealth` Health MFE route.
 
 The native Keycloak callback is `com.brianthedeveloper.mobilepoc.health://oauth/callback`. The public `health-portal` client must contain that callback and use Authorization Code + PKCE without a client secret.
 
