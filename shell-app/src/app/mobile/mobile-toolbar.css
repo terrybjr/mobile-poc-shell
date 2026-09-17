@@ -1,0 +1,79 @@
+.mobile-placeholder {
+  max-width: 520px;
+  margin: 28px auto 0;
+  padding: 24px 20px;
+  border: 1px solid #ffffff25;
+  border-radius: 18px;
+  background: #ffffff0c;
+}
+
+.mobile-placeholder h2 {
+  margin: 0;
+  font-size: 24px;
+  letter-spacing: -0.03em;
+}
+
+.mobile-placeholder p:last-child {
+  margin: 10px 0 0;
+  color: #b8cedc;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.mobile-toolbar {
+  position: sticky;
+  bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 4px;
+  max-width: 520px;
+  margin: 28px auto 0;
+  padding: 7px;
+  border: 1px solid #ffffff25;
+  border-radius: 20px;
+  background: #082f4de8;
+  box-shadow: 0 12px 28px #02172544;
+  backdrop-filter: blur(12px);
+}
+
+.mobile-toolbar button {
+  min-width: 0;
+  border: 0;
+  border-radius: 13px;
+  padding: 8px 3px 7px;
+  color: #9fbaca;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.mobile-toolbar button.active {
+  color: #f4f8fb;
+  background: #ffffff18;
+}
+
+.mobile-toolbar button:focus-visible {
+  outline: 2px solid #86c3a0;
+  outline-offset: 2px;
+}
+
+.mobile-toolbar span,
+.mobile-toolbar small {
+  display: block;
+}
+
+.mobile-toolbar span {
+  color: #86c3a0;
+  font-size: 18px;
+  line-height: 18px;
+}
+
+.mobile-toolbar small {
+  overflow: hidden;
+  margin-top: 5px;
+  font-size: 9px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

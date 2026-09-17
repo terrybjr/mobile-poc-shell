@@ -9,6 +9,8 @@ interface TokenResponse {
   id_token?: string;
   token_type?: string;
   expires_in?: number;
+  error?: string;
+  error_description?: string;
 }
 
 interface StoredSession {
@@ -81,11 +83,13 @@ export class MobileAuthService {
       });
       const tokens = (await response.json()) as TokenResponse & { error?: string };
       if (!response.ok || !tokens.access_token) {
-        throw new Error(tokens.error ?? 'Direct mobile sign-in failed.');
+        const description = tokens.error_description ?? tokens.error;
+        throw new Error(description ?? 'Direct mobile sign-in failed.');
       }
       await this.activateSession(tokens, this.claimMemberName(tokens.id_token), rememberDevice);
-    } catch {
-      this.error.set('The username or password could not be verified.');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '';
+      this.error.set(message || 'The username or password could not be verified.');
       this.busy.set(false);
     }
   }

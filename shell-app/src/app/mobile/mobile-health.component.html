@@ -1,0 +1,17 @@
+<section class="mobile-feature">
+  <div class="feature-heading"><div><p class="eyebrow">HEALTH</p><h2>Health coverage</h2></div><button type="button" class="quiet-button" (click)="refresh()" [disabled]="loading()">Refresh</button></div>
+  @if (loading()) { <p class="feature-status">Loading your Health data…</p> }
+  @if (error()) { <p class="feature-error" role="alert">{{ error() }}</p> }
+  <section class="feature-card"><div class="feature-card-title">MYTRS HEALTH</div><div class="feature-summary"><strong>{{ member().memberName }}</strong><span>{{ member().plan }} · {{ member().medical }}</span><span>${{ member().deductible }} deductible · ${{ member().fsaBalance }} FSA balance</span></div></section>
+  <form class="feature-form" (ngSubmit)="save()">
+    <label>Member name<input name="memberName" [(ngModel)]="draft.memberName" required /></label>
+    <label>Plan<input name="plan" [(ngModel)]="draft.plan" required /></label>
+    <label>Status<input name="status" [(ngModel)]="draft.status" required /></label>
+    <label>Medical plan<input name="medical" [(ngModel)]="draft.medical" required /></label>
+    <label>Deductible<input name="deductible" type="number" min="0" [(ngModel)]="draft.deductible" required /></label>
+    <label>FSA balance<input name="fsaBalance" type="number" min="0" [(ngModel)]="draft.fsaBalance" required /></label>
+    <label>Next appointment<input name="nextAppointment" [(ngModel)]="draft.nextAppointment" required /></label>
+    <div class="feature-actions"><button class="primary-button" type="submit" [disabled]="busy()">{{ busy() ? 'Saving…' : 'Save Health data' }}</button><button class="secondary-button" type="button" (click)="reset()" [disabled]="busy()">Reset demo data</button></div>
+  </form>
+  @if (saved()) { <p class="feature-success" role="status">Health data updated. Switch tabs or refresh to read the shared store.</p> }
+</section>

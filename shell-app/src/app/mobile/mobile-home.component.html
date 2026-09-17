@@ -6,7 +6,7 @@
 
   <section class="welcome">
     <p class="eyebrow">MEMBER HOME</p>
-    <h1>Hello, {{ auth.memberName() }}</h1>
+    <h1>Hello, {{ pension().memberName }}</h1>
     <p>Your secure mobile experience is ready.</p>
   </section>
 
@@ -16,17 +16,37 @@
     <span class="lock">▣</span>
   </section>
 
+  @if (activeTab() === 'overview') {
   <section class="member-card">
     <div class="card-heading"><span>MYTRS MEMBER</span><span class="verified">✓ SECURE</span></div>
-    <h2>{{ auth.memberName() }}</h2>
+    <h2>{{ pension().memberName }}</h2>
     <p>Teacher Retirement System</p>
-    <div class="member-grid"><div><small>MEMBER STATUS</small><strong>Active</strong></div><div><small>EXPERIENCE</small><strong>Mobile Shell</strong></div></div>
+    <div class="member-grid"><div><small>MEMBER STATUS</small><strong>{{ pension().status }}</strong></div><div><small>TRS PARTICIPANT ID</small><strong>{{ pension().memberId }}</strong></div></div>
   </section>
 
   <section class="hello-card">
     <span class="hello-icon">✦</span>
-    <div><p class="eyebrow">HELLO WORLD</p><h2>Welcome to MyTRS mobile.</h2><p>This native Shell landing page is intentionally limited to the mobile experience. Mobile features use the Shell session and approved REST APIs. Health is first; Pension REST is next.</p></div>
+    <div><p class="eyebrow">HELLO WORLD</p><h2>Welcome to MyTRS mobile.</h2><p>This native Shell landing page is intentionally limited to the mobile experience. The Pension and Health tabs use the Shell session and their own approved REST APIs.</p></div>
   </section>
 
   <p class="mobile-footnote">MyTRS mobile proof of concept · Fictional member data</p>
+  } @else if (activeTab() === 'pension') {
+    <app-mobile-pension />
+  } @else if (activeTab() === 'health') {
+    <app-mobile-health />
+  } @else {
+    <section class="mobile-placeholder" aria-live="polite">
+      <p class="eyebrow">{{ activeTab() === 'documents' ? 'DOCUMENTS' : 'CONTACT US' }}</p>
+      <h2>{{ activeTab() === 'documents' ? 'Documents are coming soon.' : 'Contact support is coming soon.' }}</h2>
+      <p>This native mobile area is intentionally limited to the current proof-of-concept experience.</p>
+    </section>
+  }
+
+  <nav class="mobile-toolbar" aria-label="Mobile member areas">
+    <button type="button" [class.active]="activeTab() === 'overview'" [attr.aria-current]="activeTab() === 'overview' ? 'page' : null" (click)="selectTab('overview')"><span aria-hidden="true">⌂</span><small>Home</small></button>
+    <button type="button" [class.active]="activeTab() === 'pension'" [attr.aria-current]="activeTab() === 'pension' ? 'page' : null" (click)="selectTab('pension')"><span aria-hidden="true">◇</span><small>Pension</small></button>
+    <button type="button" [class.active]="activeTab() === 'health'" [attr.aria-current]="activeTab() === 'health' ? 'page' : null" (click)="selectTab('health')"><span aria-hidden="true">♡</span><small>Health</small></button>
+    <button type="button" [class.active]="activeTab() === 'documents'" [attr.aria-current]="activeTab() === 'documents' ? 'page' : null" (click)="selectTab('documents')"><span aria-hidden="true">▤</span><small>Documents</small></button>
+    <button type="button" [class.active]="activeTab() === 'contact'" [attr.aria-current]="activeTab() === 'contact' ? 'page' : null" (click)="selectTab('contact')"><span aria-hidden="true">?</span><small>Contact Us</small></button>
+  </nav>
 </main>
