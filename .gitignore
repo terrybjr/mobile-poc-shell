@@ -1,0 +1,11 @@
+shell-app/node_modules/
+shell-app/.angular/
+shell-app/dist/
+shell-app/ios/
+shell-app/android/
+shell-app/.idea/
+shell-app/*.log
+shell-war/target/
+target/
+.idea/
+*.iml

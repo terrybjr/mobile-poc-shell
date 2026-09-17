@@ -1,0 +1,42 @@
+@if (mobileMode) {
+  @if (mobileAuth.authenticated()) {
+    <app-mobile-home />
+  } @else {
+    <app-mobile-login />
+  }
+} @else {
+  <div class="page">
+    <header class="site-header">
+      <a class="brand" href="/pension/" aria-label="My TRS home">
+        <span class="my">My</span><span class="trs">TRS</span><span class="leaf">✦</span>
+        <small>TEACHER RETIREMENT SYSTEM</small>
+      </a>
+      <div class="utility">
+        <em>Secure member experience</em>
+        <a href="/pension/">Pension Home</a>
+        <a href="/pension/health/architecture.html">Architecture</a>
+        <button type="button" (click)="logout()">Log Off</button>
+      </div>
+    </header>
+
+    <nav class="main-nav" aria-label="Member navigation">
+      <a href="/pension/">Retirement<br />Benefits</a>
+      <a href="/pension/">Account<br />Summary</a>
+      <a class="active" href="/pension/shell/myhealth">Health<br />Coverage</a>
+      <a href="/pension/">Documents<br />&amp; Forms</a>
+      <a href="/pension/">Messages</a>
+    </nav>
+
+    <main>
+      @if (authReady()) {
+        <router-outlet />
+      } @else if (error()) {
+        <div class="error" role="alert">{{ error() }}</div>
+      } @else {
+        <div class="loading" role="status">Loading your member experience…</div>
+      }
+    </main>
+  </div>
+
+  <footer>MyTRS Health Coverage · This proof-of-concept contains fictional member information.</footer>
+}

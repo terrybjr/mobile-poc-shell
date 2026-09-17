@@ -1,0 +1,1 @@
+(self.webpackChunkshell_app=self.webpackChunkshell_app||[]).push([[392],{7392(e,n,s){s.r(n),s.d(n,{Browser:()=>h});const h=(0,s(4283).registerPlugin)("Browser",{web:()=>s.e(786).then(s.bind(s,4786)).then(o=>new o.BrowserWeb)})}}]);

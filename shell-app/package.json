@@ -1,0 +1,67 @@
+{
+  "name": "shell-app",
+  "version": "0.0.0",
+  "scripts": {
+    "ng": "ng",
+    "start": "ng serve",
+    "build": "ng build",
+    "build:web": "ng build --configuration production --base-href ./",
+    "mobile:sync": "npx cap sync",
+    "mobile:sync:android": "npx cap sync android",
+    "mobile:sync:ios": "npx cap sync ios",
+    "mobile:prepare:ios": "npm run build:web && npx cap sync ios && node scripts/register-ios-url-scheme.js",
+    "mobile:open:ios": "npm run mobile:prepare:ios && npx cap open ios",
+    "watch": "ng build --watch --configuration development",
+    "test": "ng test",
+    "run:all": "node node_modules/@angular-architects/module-federation/src/server/mf-dev-server.js"
+  },
+  "prettier": {
+    "printWidth": 100,
+    "singleQuote": true,
+    "overrides": [
+      {
+        "files": "*.html",
+        "options": {
+          "parser": "angular"
+        }
+      }
+    ]
+  },
+  "private": true,
+  "dependencies": {
+    "@angular-architects/module-federation": "^20.0.0",
+    "@angular/common": "^20.3.0",
+    "@angular/compiler": "^20.3.0",
+    "@angular/core": "^20.3.0",
+    "@angular/forms": "^20.3.0",
+    "@angular/platform-browser": "^20.3.0",
+    "@angular/router": "^20.3.0",
+    "@aparajita/capacitor-biometric-auth": "^10.0.0",
+    "@aparajita/capacitor-secure-storage": "^8.0.0",
+    "@capacitor/android": "8.5.2",
+    "@capacitor/app": "^8.1.1",
+    "@capacitor/browser": "^8.0.4",
+    "@capacitor/core": "8.5.2",
+    "@capacitor/ios": "8.5.2",
+    "@capacitor/splash-screen": "8.0.2",
+    "keycloak-js": "^26.2.4",
+    "rxjs": "~7.8.0",
+    "tslib": "^2.3.0",
+    "zone.js": "~0.15.0"
+  },
+  "devDependencies": {
+    "@angular-devkit/build-angular": "^20.3.31",
+    "@angular/build": "^20.3.31",
+    "@angular/cli": "^20.3.31",
+    "@angular/compiler-cli": "^20.3.0",
+    "@types/jasmine": "~5.1.0",
+    "jasmine-core": "~5.9.0",
+    "karma": "~6.4.0",
+    "karma-chrome-launcher": "~3.2.0",
+    "karma-coverage": "~2.2.0",
+    "karma-jasmine": "~5.1.0",
+    "karma-jasmine-html-reporter": "~2.1.0",
+    "ngx-build-plus": "^20.0.0",
+    "typescript": "~5.9.2"
+  }
+}

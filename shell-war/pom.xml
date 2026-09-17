@@ -1,0 +1,27 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>local.demo</groupId>
+    <artifactId>mobile-poc-shell</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+  </parent>
+  <artifactId>shell-war</artifactId>
+  <packaging>war</packaging>
+  <build>
+    <finalName>shell</finalName>
+    <plugins>
+      <plugin>
+        <artifactId>maven-war-plugin</artifactId>
+        <version>3.4.0</version>
+        <configuration>
+          <failOnMissingWebXml>false</failOnMissingWebXml>
+          <webResources>
+            <resource>
+              <directory>src/main/angular-dist</directory>
+            </resource>
+          </webResources>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

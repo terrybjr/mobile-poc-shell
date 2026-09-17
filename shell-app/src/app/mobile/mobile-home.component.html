@@ -1,0 +1,32 @@
+<main class="mobile-home">
+  <header class="home-header">
+    <div class="mobile-brand"><span class="brand-mark">✦</span><span><strong>MyTRS</strong><small>MEMBER MOBILE</small></span></div>
+    <button type="button" class="sign-out" (click)="signOut()">Sign out</button>
+  </header>
+
+  <section class="welcome">
+    <p class="eyebrow">MEMBER HOME</p>
+    <h1>Hello, {{ auth.memberName() }}</h1>
+    <p>Your secure mobile experience is ready.</p>
+  </section>
+
+  <section class="online-card" aria-label="Connection status">
+    <span class="online-dot" [class.offline]="!auth.online()"></span>
+    <div><strong>{{ auth.online() ? 'You are online' : 'You are offline' }}</strong><small>{{ auth.online() ? 'Your member information is up to date.' : 'Some information may be unavailable.' }}</small></div>
+    <span class="lock">▣</span>
+  </section>
+
+  <section class="member-card">
+    <div class="card-heading"><span>MYTRS MEMBER</span><span class="verified">✓ SECURE</span></div>
+    <h2>{{ auth.memberName() }}</h2>
+    <p>Teacher Retirement System</p>
+    <div class="member-grid"><div><small>MEMBER STATUS</small><strong>Active</strong></div><div><small>EXPERIENCE</small><strong>Mobile Shell</strong></div></div>
+  </section>
+
+  <section class="hello-card">
+    <span class="hello-icon">✦</span>
+    <div><p class="eyebrow">HELLO WORLD</p><h2>Welcome to MyTRS mobile.</h2><p>This native Shell landing page is intentionally limited to the mobile experience. Health and the rest of the web portal will be added here as mobile features.</p></div>
+  </section>
+
+  <p class="mobile-footnote">MyTRS mobile proof of concept · Fictional member data</p>
+</main>

@@ -1,0 +1,1 @@
+(self.webpackChunkshell_app=self.webpackChunkshell_app||[]).push([[322,941],{8941(A,n,p){p.r(n),p.d(n,{App:()=>h});const h=(0,p(4283).registerPlugin)("App",{web:()=>p.e(303).then(p.bind(p,9303)).then(s=>new s.AppWeb)})}}]);
