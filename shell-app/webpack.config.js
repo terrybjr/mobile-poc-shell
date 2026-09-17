@@ -3,7 +3,7 @@ const { shareAll, withModuleFederationPlugin } = require('@angular-architects/mo
 module.exports = withModuleFederationPlugin({
 
   remotes: {
-    health: 'health@https://brianthedeveloper.com/pension/health/remoteEntry.js',
+    health: 'health@https://brianthedeveloper.com/mobile-poc/wss-apps/health/remoteEntry.js',
   },
 
   shared: {

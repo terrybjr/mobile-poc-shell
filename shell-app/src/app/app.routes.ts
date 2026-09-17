@@ -8,7 +8,7 @@ export const routes: Routes = [
     loadComponent: () =>
       loadRemoteModule({
         type: 'module',
-        remoteEntry: 'https://brianthedeveloper.com/pension/health/remoteEntry.js?v=mock-editor-20260917',
+        remoteEntry: 'https://brianthedeveloper.com/mobile-poc/wss-apps/health/remoteEntry.js?v=mock-editor-20260917',
         exposedModule: './Component'
       }).then((module) => module.HealthComponent)
   }

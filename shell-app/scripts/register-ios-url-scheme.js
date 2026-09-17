@@ -25,10 +25,12 @@ if (!plist.includes(scheme)) {
     </dict>
   </array>`;
 
-  plist = plist.replace(
-    '  <key>CFBundleDevelopmentRegion</key>',
-    `${entry}\n  <key>CFBundleDevelopmentRegion</key>`
-  );
+  const marker = /\s*<key>CFBundleDevelopmentRegion<\/key>/;
+  if (!marker.test(plist)) {
+    throw new Error('Unable to locate CFBundleDevelopmentRegion in Info.plist');
+  }
+
+  plist = plist.replace(marker, `${entry}\n\t<key>CFBundleDevelopmentRegion</key>`);
 
   fs.writeFileSync(plistPath, plist);
   console.log(`Registered iOS URL scheme: ${scheme}`);
@@ -40,10 +42,12 @@ if (!plist.includes('NSFaceIDUsageDescription')) {
   const entry = `
   <key>NSFaceIDUsageDescription</key>
   <string>${faceIdUsageDescription}</string>`;
-  plist = plist.replace(
-    '  <key>CFBundleDevelopmentRegion</key>',
-    `${entry}\n  <key>CFBundleDevelopmentRegion</key>`
-  );
+  const marker = /\s*<key>CFBundleDevelopmentRegion<\/key>/;
+  if (!marker.test(plist)) {
+    throw new Error('Unable to locate CFBundleDevelopmentRegion in Info.plist');
+  }
+
+  plist = plist.replace(marker, `${entry}\n\t<key>CFBundleDevelopmentRegion</key>`);
   fs.writeFileSync(plistPath, plist);
   console.log('Registered iOS Face ID usage description');
 }

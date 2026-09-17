@@ -43,7 +43,7 @@ export class App implements OnInit {
       const authenticated = await this.keycloak.init({
         onLoad: 'login-required',
         checkLoginIframe: false,
-        redirectUri: `${window.location.origin}/pension/shell/`
+        redirectUri: `${window.location.origin}/mobile-poc/wss-apps/`
       });
       if (!authenticated) {
         this.error.set('Unable to establish a Health session.');
@@ -59,6 +59,6 @@ export class App implements OnInit {
   }
 
   logout(): void {
-    void this.keycloak.logout({ redirectUri: `${window.location.origin}/pension/` });
+    void this.keycloak.logout({ redirectUri: `${window.location.origin}/mobile-poc/` });
   }
 }
