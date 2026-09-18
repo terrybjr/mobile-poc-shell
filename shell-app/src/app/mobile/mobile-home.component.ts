@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, ElementRef, inject, OnInit, signal } from '@angular/core';
 import { MobileAuthService } from './mobile-auth.service';
 import { MobileHealthComponent } from './mobile-health.component';
 import { MobilePensionComponent } from './mobile-pension.component';
@@ -22,6 +22,7 @@ const API_BASE = 'https://brianthedeveloper.com';
   styleUrls: ['./mobile-home.component.css', './mobile-toolbar.css']
 })
 export class MobileHomeComponent implements OnInit {
+  private readonly elementRef = inject(ElementRef<HTMLElement>);
   protected readonly auth = inject(MobileAuthService);
   private readonly http = inject(HttpClient);
   protected readonly activeTab = signal<MobileTab>('overview');
@@ -48,7 +49,8 @@ export class MobileHomeComponent implements OnInit {
 
   selectTab(tab: MobileTab): void {
     this.activeTab.set(tab);
-    window.scrollTo({ top: 0, behavior: 'auto' });
+    const mobileHome = this.elementRef.nativeElement.querySelector('.mobile-home') as HTMLElement | null;
+    mobileHome?.scrollTo({ top: 0, behavior: 'auto' });
   }
 
   signOut(): void {

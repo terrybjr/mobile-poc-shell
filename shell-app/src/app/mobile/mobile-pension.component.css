@@ -6,3 +6,4 @@
 .feature-form button, .quiet-button { min-height: 44px; }
 .feature-form input { -webkit-appearance: none; }
 .feature-actions { align-items: stretch; }
+.feature-form input { min-width: 0; max-width: 100%; box-sizing: border-box; scroll-margin-block: 24px 144px; }

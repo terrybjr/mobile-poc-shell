@@ -4,11 +4,18 @@
 }
 
 .mobile-home {
+  height: 100dvh;
+  max-height: 100dvh;
   min-height: 100dvh;
   padding: calc(25px + env(safe-area-inset-top, 0px)) 20px calc(104px + env(safe-area-inset-bottom, 0px));
   overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: none;
+  scroll-padding-top: calc(25px + env(safe-area-inset-top, 0px));
+  scroll-padding-bottom: calc(104px + env(safe-area-inset-bottom, 0px));
   color: #f4f8fb;
   background: radial-gradient(circle at 90% 0, #285b80 0, transparent 42%), linear-gradient(155deg, #072846 0%, #0b3d62 58%, #0a2c49 100%);
+  -webkit-overflow-scrolling: touch;
 }
 
 .home-header {

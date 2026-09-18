@@ -64,8 +64,10 @@
 @supports selector(.mobile-home:has(input:focus)) {
   .mobile-home:has(input:focus) .mobile-toolbar {
     opacity: 0;
+    visibility: hidden;
     pointer-events: none;
-    transform: translateY(calc(100% + 24px));
+    transform: none;
+    transition: none;
   }
 }
 
