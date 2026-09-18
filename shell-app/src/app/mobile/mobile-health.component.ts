@@ -177,13 +177,13 @@ export class MobileHealthComponent implements OnInit {
   }
 
   protected canSubmitMbi(): boolean {
-    return !this.invalidMbiRecord();
+    return !this.invalidSelectedMbi();
   }
 
   protected submitMbi(): void {
     const token = window.__mobileAuth?.token;
     if (!token) { this.mbiError.set('Your mobile session is no longer available.'); return; }
-    if (!this.canSubmitMbi()) { const invalid = this.invalidMbiRecord(); this.mbiError.set(`Enter and re-enter the same MBI for ${invalid?.name ?? 'each Medicare-covered person'}.`); return; }
+    if (!this.canSubmitMbi()) { const invalid = this.invalidSelectedMbi(); this.mbiError.set(`Enter and re-enter the same MBI for ${invalid?.name ?? 'the selected person'}.`); return; }
     this.mbiBusy.set(true); this.mbiSaved.set(false); this.mbiError.set('');
     this.http.put<MbiRecord[]>(`${API_BASE}/mobile-poc/wss-apps/health-ws/api/health/mbi`, this.draftMbiRecords, this.options(token)).subscribe({
       next: data => { this.draftMbiRecords = data.map(record => ({ ...record })); this.mbiSaved.set(true); this.mbiBusy.set(false); this.activePage.set('home'); this.actionMessage.set('Medicare information submitted.'); },
@@ -191,12 +191,12 @@ export class MobileHealthComponent implements OnInit {
     });
   }
 
-  private invalidMbiRecord(): MbiRecord | undefined {
-    return this.draftMbiRecords.find(record => {
-      const mbi = this.normalizeMbi(record.medicareNumber);
-      const reentry = this.normalizeMbi(record.reentryMedicareNumber);
-      return !mbi || !reentry || mbi !== reentry;
-    });
+  private invalidSelectedMbi(): MbiRecord | undefined {
+    const record = this.draftMbiRecords[this.selectedMbiIndex()];
+    if (!record) return undefined;
+    const mbi = this.normalizeMbi(record.medicareNumber);
+    const reentry = this.normalizeMbi(record.reentryMedicareNumber);
+    return !mbi || !reentry || mbi !== reentry ? record : undefined;
   }
 
   private normalizeMbi(value: string): string { return (value || '').replace(/[\s-]/g, '').toUpperCase(); }
