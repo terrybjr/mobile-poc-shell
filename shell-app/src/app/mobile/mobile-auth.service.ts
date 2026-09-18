@@ -22,11 +22,17 @@ interface StoredSession {
 }
 
 class NetworkAuthError extends Error {}
+class InvalidSessionError extends Error {}
+
+export function refreshResponseRequiresSignIn(status: number): boolean {
+  return status === 400 || status === 401 || status === 403;
+}
 
 const KEYCLOAK_BASE = 'https://brianthedeveloper.com';
 const REALM = 'trs-demo';
 const CLIENT_ID = 'health-portal';
 const SESSION_KEY = 'mytrs.mobile.session';
+const REFRESH_TIMEOUT_MS = 10_000;
 
 @Injectable({ providedIn: 'root' })
 export class MobileAuthService {
@@ -41,6 +47,7 @@ export class MobileAuthService {
   readonly offlineMode = signal(false);
   readonly lockedForBackground = signal(false);
   private biometricPromptActive = false;
+  private revalidationInFlight = false;
 
   async initialize(): Promise<void> {
     if (!Capacitor.isNativePlatform()) {
@@ -50,9 +57,12 @@ export class MobileAuthService {
 
     window.addEventListener('online', () => {
       this.online.set(true);
-      if (this.authenticated() && this.offlineMode()) void this.revalidateOnlineSession();
+      if (this.authenticated()) void this.revalidateOnlineSession();
     });
-    window.addEventListener('offline', () => this.online.set(false));
+    window.addEventListener('offline', () => {
+      this.online.set(false);
+      if (this.authenticated()) this.offlineMode.set(true);
+    });
 
     await App.addListener('appStateChange', ({ isActive }) => {
       if (!isActive) {
@@ -162,10 +172,22 @@ export class MobileAuthService {
           await this.activateStoredSession(saved);
           return;
         }
+        if (error instanceof NetworkAuthError) {
+          this.error.set('MyTRS is temporarily unavailable. Try again when you reconnect.');
+          this.busy.set(false);
+          return;
+        }
+        if (error instanceof InvalidSessionError) await this.clearSavedSession();
         throw error;
       }
-    } catch {
-      this.error.set('Unlock was cancelled or the saved session has expired. Sign in again.');
+    } catch (error) {
+      if (!this.error()) {
+        this.error.set(
+          error instanceof InvalidSessionError
+            ? 'Your saved session has expired. Sign in again.'
+            : 'Unlock was cancelled or the saved session has expired. Sign in again.',
+        );
+      }
       this.busy.set(false);
     }
   }
@@ -183,20 +205,39 @@ export class MobileAuthService {
   }
 
   private async exchangeRefreshToken(refreshToken: string): Promise<TokenResponse> {
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), REFRESH_TIMEOUT_MS);
     let response: Response;
     try {
       response = await fetch(`${KEYCLOAK_BASE}/realms/${REALM}/protocol/openid-connect/token`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({ grant_type: 'refresh_token', client_id: CLIENT_ID, refresh_token: refreshToken })
+        body: new URLSearchParams({ grant_type: 'refresh_token', client_id: CLIENT_ID, refresh_token: refreshToken }),
+        signal: controller.signal,
       });
     } catch {
       throw new NetworkAuthError('Refresh could not reach the identity provider.');
+    } finally {
+      window.clearTimeout(timeout);
+    }
+
+    if (refreshResponseRequiresSignIn(response.status)) {
+      throw new InvalidSessionError('Refresh session is no longer valid.');
     }
     if (!response.ok) {
-      throw new Error('Refresh failed.');
+      throw new NetworkAuthError(`Refresh service returned HTTP ${response.status}.`);
     }
-    return (await response.json()) as TokenResponse;
+
+    let tokens: TokenResponse;
+    try {
+      tokens = (await response.json()) as TokenResponse;
+    } catch {
+      throw new NetworkAuthError('Refresh service returned an invalid response.');
+    }
+    if (!tokens.access_token) {
+      throw new NetworkAuthError('Refresh service returned no access token.');
+    }
+    return tokens;
   }
 
   private async activateSession(tokens: TokenResponse, fallbackName: string, save: boolean): Promise<void> {
@@ -254,15 +295,37 @@ export class MobileAuthService {
   }
 
   private async revalidateOnlineSession(): Promise<void> {
+    if (this.revalidationInFlight) return;
+    this.revalidationInFlight = true;
+
     const saved = await this.readStoredSession();
-    if (!saved) return;
     try {
+      if (!saved) {
+        this.offlineMode.set(false);
+        return;
+      }
       const tokens = await this.exchangeRefreshToken(saved.refreshToken);
       await this.activateSession(tokens, saved.memberName, true);
-    } catch {
-      // Keep the read-only offline session until the member explicitly signs
-      // in again; an intermittent reconnect must not discard cached access.
+    } catch (error) {
+      if (error instanceof InvalidSessionError) {
+        await this.clearSavedSession();
+        this.error.set('Your saved session has expired. Sign in again.');
+      }
+      // Keep the read-only offline session for transient network and server
+      // failures. A later online event can retry the refresh naturally.
+    } finally {
+      this.revalidationInFlight = false;
     }
+  }
+
+  private async clearSavedSession(): Promise<void> {
+    await SecureStorage.remove(SESSION_KEY).catch(() => false);
+    this.hasSavedSession.set(false);
+    this.authenticated.set(false);
+    this.offlineMode.set(false);
+    this.lockedForBackground.set(false);
+    delete window.__mobileAuth;
+    delete window.__healthAuth;
   }
 
   private lockForBackground(): void {
