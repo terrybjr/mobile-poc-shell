@@ -381,25 +381,50 @@ button:disabled {
 }
 
 .mobile-stepper-nav li {
+  min-width: 0;
+}
+
+.stepper-step {
   display: grid;
   justify-items: center;
   gap: 5px;
+  width: 100%;
   min-width: 0;
+  min-height: 62px;
   padding: 8px 3px;
   border: 1px solid #ffffff22;
   border-radius: 10px;
   color: #8eaebe;
   background: #ffffff09;
+  font: inherit;
   text-align: center;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.stepper-step:not(:disabled) {
+  cursor: pointer;
+}
+
+.stepper-step:focus-visible {
+  outline: 2px solid #9fddb7;
+  outline-offset: 2px;
 }
 
 .mobile-stepper-nav li.current {
+  color: #f4f8fb;
+}
+
+.mobile-stepper-nav li.current .stepper-step {
   border-color: #86c3a0;
   color: #f4f8fb;
   background: #86c3a018;
 }
 
 .mobile-stepper-nav li.complete {
+  color: #b7dcc5;
+}
+
+.mobile-stepper-nav li.complete .stepper-step {
   color: #b7dcc5;
 }
 
@@ -420,7 +445,7 @@ button:disabled {
   background: #86c3a0;
 }
 
-.mobile-stepper-nav li > span:last-child {
+.stepper-step > span:last-child {
   overflow: hidden;
   max-width: 100%;
   font-size: 9px;

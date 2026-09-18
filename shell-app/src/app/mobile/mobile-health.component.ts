@@ -413,6 +413,13 @@ export class MobileHealthComponent implements OnInit {
     this.enrollmentStep.update((step) => Math.max(1, step - 1));
   }
 
+  protected goToEnrollmentStep(step: number): void {
+    if (this.enrollmentSaving() || step >= this.enrollmentStep()) return;
+
+    this.enrollmentError.set('');
+    this.enrollmentStep.set(step);
+  }
+
   protected advanceEnrollment(): void {
     if (this.enrollmentStep() < this.enrollmentSteps.length) {
       this.nextEnrollmentStep();

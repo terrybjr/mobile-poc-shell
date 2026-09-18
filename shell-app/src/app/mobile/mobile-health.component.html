@@ -151,8 +151,16 @@
               [class.complete]="enrollmentStep() > index + 1"
               [attr.aria-current]="enrollmentStep() === index + 1 ? 'step' : null"
             >
-              <span class="step-number">{{ index + 1 }}</span>
-              <span>{{ label }}</span>
+              <button
+                type="button"
+                class="stepper-step"
+                [disabled]="index + 1 >= enrollmentStep() || enrollmentSaving()"
+                [attr.aria-label]="index + 1 < enrollmentStep() ? 'Go to ' + label : label"
+                (click)="goToEnrollmentStep(index + 1)"
+              >
+                <span class="step-number">{{ index + 1 }}</span>
+                <span>{{ label }}</span>
+              </button>
             </li>
           }
         </ol>
