@@ -1,5 +1,5 @@
 * { box-sizing: border-box; }
-html, body { margin: 0; min-height: 100%; background: #fff; color: #062f62; font: 14px Arial, Helvetica, sans-serif; }
+html, body { margin: 0; min-height: 100%; overflow-x: hidden; background: #fff; color: #062f62; font: 14px Arial, Helvetica, sans-serif; }
 body { min-width: 320px; }
 .page { max-width: 1320px; min-height: calc(100vh - 70px); margin: 0 auto; }
 .site-header { min-height: 98px; display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; padding: 10px 8px 0; }
@@ -25,7 +25,7 @@ html { -webkit-text-size-adjust: 100%; }
 
 /* Native mobile surfaces share the same scroll and touch behavior. */
 .mobile-shell,
-.mobile-home { overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
+.mobile-home { overflow-x: hidden; overscroll-behavior-x: none; -webkit-tap-highlight-color: transparent; }
 .mobile-shell button,
 .mobile-home button,
 .mobile-shell a,
