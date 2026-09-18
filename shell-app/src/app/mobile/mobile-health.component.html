@@ -14,15 +14,12 @@
         class="quiet-button"
         (click)="refresh()"
         [disabled]="loading() || busy()"
-        aria-label="Refresh Health data"
+        [attr.aria-label]="loading() ? 'Loading Health data' : 'Refresh Health data'"
       >
         {{ loading() ? 'Loading…' : 'Refresh' }}
       </button>
     </header>
 
-    @if (loading()) {
-      <p class="feature-status" role="status">Loading your Health information…</p>
-    }
     @if (error()) {
       <p class="feature-error" role="alert">{{ error() }}</p>
     }

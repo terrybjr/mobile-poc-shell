@@ -4,12 +4,17 @@
       <p class="eyebrow">PENSION</p>
       <h2 id="pension-title">Retirement account</h2>
     </div>
-    <button type="button" class="quiet-button" (click)="refresh()" [disabled]="loading() || busy()" aria-label="Refresh Pension data">Refresh</button>
+    <button
+      type="button"
+      class="quiet-button"
+      (click)="refresh()"
+      [disabled]="loading() || busy()"
+      [attr.aria-label]="loading() ? 'Loading Pension data' : 'Refresh Pension data'"
+    >
+      {{ loading() ? 'Loading…' : 'Refresh' }}
+    </button>
   </div>
 
-  @if (loading()) {
-    <p class="feature-status" role="status">Loading your Pension data…</p>
-  }
   @if (error()) {
     <p class="feature-error" role="alert">{{ error() }}</p>
   }
