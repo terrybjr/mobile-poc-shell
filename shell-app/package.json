@@ -4,7 +4,7 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build",
+    "build": "npm run build:web",
     "build:web": "ng build --configuration production --base-href ./",
     "mobile:sync": "npx cap sync",
     "mobile:sync:android": "npx cap sync android",
