@@ -1,87 +1,886 @@
-<section class="mobile-feature" aria-labelledby="health-title" [attr.aria-busy]="loading() || busy()">
-  <div class="feature-heading">
-    <div>
-      <p class="eyebrow">HEALTH</p>
-      <h2 id="health-title">Health coverage</h2>
-    </div>
-    <button type="button" class="quiet-button" (click)="refresh()" [disabled]="loading() || busy()" aria-label="Refresh Health data">Refresh</button>
-  </div>
-
-  @if (loading()) {
-    <p class="feature-status" role="status">Loading your Health data…</p>
-  }
-  @if (error()) {
-    <p class="feature-error" role="alert">{{ error() }}</p>
-  }
-
-  @if (activePage() === 'home') { <section class="mobile-welcome" aria-label="Health actions introduction">
-    <p class="mobile-eyebrow">MYTRS HEALTH</p>
-    <strong>Manage your TRS-Care benefits</strong>
-    <span>Select an action below to continue.</span>
-  </section>
-
-  <section class="mobile-action-grid" aria-label="Health policy actions">
-    <button type="button" class="mobile-action-card mobile-action-primary" (click)="selectAction('TRS-Care Initial Enrollment')"><span class="mobile-action-icon" aria-hidden="true">♥</span><span><strong>Initial enrollment</strong><small>Enroll in Medical, Dental and/or Vision coverage</small></span></button>
-    <button type="button" class="mobile-action-card" (click)="selectAction('Submit Medicare Beneficiary Identifier (MBI)')"><span class="mobile-action-icon" aria-hidden="true">▣</span><span><strong>Submit MBI</strong><small>Submit your Medicare Beneficiary Identifier to TRS.</small></span></button>
-  </section>
-  @if (actionMessage()) {
-    <p class="feature-success" role="status">{{ actionMessage() }}</p>
-  } }
-  @if (enrollmentError()) { <p class="feature-error" role="alert">{{ enrollmentError() }}</p> }
-  @if (enrollmentMessage()) { <p class="feature-success" role="status">{{ enrollmentMessage() }}</p> }
-
-  @if (enrollmentModal() === 'eligibility') { <div class="mobile-modal-backdrop"><section class="mobile-modal" role="dialog" aria-modal="true" aria-labelledby="mobile-eligibility-title"><button type="button" class="mobile-modal-close" (click)="enrollmentModal.set('none')" aria-label="Close">×</button><p class="mobile-eyebrow">BEFORE YOU START</p><h3 id="mobile-eligibility-title">Dependent Medicare eligibility</h3><p><strong>Will anyone you are enrolling be eligible for Medicare on the coverage start date?</strong></p><p class="mobile-muted">This includes SSDI, End Stage Renal Disease, or age 65+. Medicare-eligible dependents follow a downloadable-form process.</p><div class="mobile-modal-actions"><button type="button" class="secondary-button" (click)="chooseEligibility('MEDICARE')">Medicare path</button><button type="button" class="primary-button" (click)="chooseEligibility('CONTINUE')">Continue</button></div></section></div> }
-  @if (enrollmentModal() === 'resume' && enrollment) { <div class="mobile-modal-backdrop"><section class="mobile-modal" role="dialog" aria-modal="true" aria-labelledby="mobile-resume-title"><button type="button" class="mobile-modal-close" (click)="enrollmentModal.set('none')" aria-label="Close">×</button><p class="mobile-eyebrow">SAVED APPLICATION</p><h3 id="mobile-resume-title">Enrollment in progress</h3><p>Your application started {{ enrollment.startDate }}. Edit it or cancel it.</p><div class="mobile-modal-actions"><button type="button" class="secondary-button" (click)="cancelEnrollment()">Cancel</button><button type="button" class="primary-button" (click)="continueEnrollment()">Edit</button></div></section></div> }
-
-  @if (enrollmentOpen() && enrollment) { <section class="mobile-enrollment" aria-labelledby="mobile-enrollment-title"><div class="mobile-enrollment-heading"><div><p class="mobile-eyebrow">TRS-CARE INITIAL ENROLLMENT</p><h3 id="mobile-enrollment-title">Your enrollment</h3></div><button type="button" class="quiet-button" (click)="closeEnrollment()">Save & close</button></div><div class="mobile-stepper-nav" role="list">@for (label of ['Disclosure', 'Verify', 'Plans', 'Accept', 'Submit']; track label; let index = $index) { <span [class.current]="enrollmentStep() === index + 1" [class.complete]="enrollmentStep() > index + 1"><b>{{ index + 1 }}</b><small>{{ label }}</small></span> }</div>
-    @if (enrollmentStep() === 1) { <article class="mobile-enrollment-card"><h4>Disclosure and consent</h4><div class="mobile-legal"><p>This online Initial Enrollment Application allows an eligible retiree to enroll in TRS-Care medical and prescription, Dental, and Vision coverage. Coverage begins after a completed application is received within the eligible enrollment period.</p><p>You may amend dependent selections during the enrollment period. After submission, corrections must be handled through TRS Health.</p><p>Read the complete enrollment disclosure before continuing.</p></div><label class="mobile-check"><input type="checkbox" [(ngModel)]="enrollment.legalAccepted" /> I have read and understand the disclosure.</label></article> }
-    @if (enrollmentStep() === 2) { <article class="mobile-enrollment-card"><h4>Verify your information</h4><p class="mobile-muted">Review the information on file. Corrections would continue through Account Management.</p><label>Member name<input [(ngModel)]="enrollment.memberName" name="mobileEnrollmentName" /></label><label>Mailing address<textarea [(ngModel)]="enrollment.mailingAddress" name="mobileEnrollmentAddress" rows="3"></textarea></label><label class="mobile-check"><input type="checkbox" [(ngModel)]="enrollment.demographicVerified" /> My information is correct.</label></article> }
-    @if (enrollmentStep() === 3) { <article class="mobile-enrollment-card"><h4>Plan selection</h4><label>Effective date<select [(ngModel)]="enrollment.effectiveDate" name="mobileEffectiveDate"><option value="">Choose a date</option><option value="2026-10-01">10/01/2026</option><option value="2026-11-01">11/01/2026</option><option value="2026-12-01">12/01/2026</option></select></label>@for (coverage of [{label: 'Medical / Rx', key: 'medicalCoverage'}, {label: 'Dental', key: 'dentalCoverage'}, {label: 'Vision', key: 'visionCoverage'}]; track coverage.key) { <div class="mobile-plan-card"><div class="mobile-plan-title"><strong>{{ coverage.label }}</strong><button type="button" class="link-button" (click)="openDependentModal()">Add dependent</button></div>@for (person of enrollmentPeople(); track person.name) { <label class="mobile-person-row"><span>{{ person.name }}<small>{{ person.relationship }}</small></span><select [name]="'mobile-' + coverage.key + '-' + person.name" [(ngModel)]="$any(enrollment)[coverage.key]"><option value="None">None</option><option value="Enroll">Enroll</option></select></label> }</div> }</article> }
-    @if (enrollmentStep() === 4) { <article class="mobile-enrollment-card"><h4>Acknowledgment and acceptance</h4><div class="mobile-legal"><p>I acknowledge that the information is true and complete. I authorize TRS to administer the selected plans and understand that required contributions may be withheld or billed.</p></div><fieldset class="mobile-radio-group"><legend>Do you accept the terms? *</legend><label><input type="radio" name="mobileTerms" [(ngModel)]="enrollment.acknowledgmentAccepted" [value]="true" /> Yes, I accept</label><label><input type="radio" name="mobileTerms" [(ngModel)]="enrollment.acknowledgmentAccepted" [value]="false" /> No, I do not accept</label></fieldset><label>Signature *<input [(ngModel)]="enrollment.signature" name="mobileEnrollmentSignature" placeholder="Type your full name" /></label></article> }
-    @if (enrollmentStep() === 5) { <article class="mobile-enrollment-card"><h4>Review and submit</h4><p class="mobile-muted">Review the results and calculated premiums. You cannot edit this application after submission.</p><div class="mobile-summary-table">@for (person of enrollmentPeople(); track person.name) { <div class="mobile-summary-row"><strong>{{ person.name }}</strong><span>{{ person.relationship }}</span><span>Medical {{ enrollment.medicalCoverage === 'Enroll' ? '✓' : '—' }}</span><span>Dental {{ enrollment.dentalCoverage === 'Enroll' ? '✓' : '—' }}</span><span>Vision {{ enrollment.visionCoverage === 'Enroll' ? '✓' : '—' }}</span></div> }<div class="mobile-premium-row"><span>Medical/Rx</span><strong>${{ premium('medicalCoverage') }}</strong><span>Dental</span><strong>${{ premium('dentalCoverage') }}</strong><span>Vision</span><strong>${{ premium('visionCoverage') }}</strong><span>Total</span><strong>${{ totalPremium() }}</strong></div></div><label class="mobile-check"><input type="checkbox" [(ngModel)]="enrollment.acknowledgmentAccepted" /> I accept these selections and premiums.</label></article> }
-    @if (enrollmentSaving()) { <p class="feature-status">Saving your draft…</p> } @if (enrollmentError()) { <p class="feature-error" role="alert">{{ enrollmentError() }}</p> }<div class="mobile-enrollment-actions"><button type="button" class="secondary-button" (click)="previousEnrollmentStep()" [disabled]="enrollmentStep() === 1 || enrollmentSaving()">Back</button>@if (enrollmentStep() < 5) { <button type="button" class="primary-button" (click)="nextEnrollmentStep()" [disabled]="enrollmentSaving()">Next</button> } @else { <button type="button" class="primary-button" (click)="submitEnrollment()" [disabled]="enrollmentSaving()">Submit</button> }</div>
-  </section> }
-
-  @if (dependentModal() === 'select' && enrollment) { <div class="mobile-modal-backdrop"><section class="mobile-modal" role="dialog" aria-modal="true" aria-labelledby="mobile-dependent-title"><button type="button" class="mobile-modal-close" (click)="dependentModal.set('none')" aria-label="Close">×</button><h3 id="mobile-dependent-title">Select dependent</h3><p class="mobile-muted">Choose someone already associated with the member account.</p>@for (dependent of enrollment.dependents; track dependent.id) { <div class="mobile-dependent-option"><span><strong>{{ dependent.name }}</strong><small>{{ dependent.relationship }}</small></span><button type="button" class="primary-button" (click)="addExistingDependent(dependent.id)" [disabled]="dependent.selected">{{ dependent.selected ? 'Added' : 'Select' }}</button></div> }<button type="button" class="secondary-button full-button" (click)="openNewDependent()">Add new dependent</button></section></div> }
-  @if (dependentModal() === 'new') { <div class="mobile-modal-backdrop"><section class="mobile-modal" role="dialog" aria-modal="true" aria-labelledby="mobile-new-dependent-title"><button type="button" class="mobile-modal-close" (click)="dependentModal.set('select')" aria-label="Close">×</button><h3 id="mobile-new-dependent-title">Add dependent</h3><p class="mobile-muted">Fields marked * are required.</p><label>Legal first name *<input [(ngModel)]="newDependent.name" name="mobileNewDependentName" /></label><label>Relationship *<select [(ngModel)]="newDependent.relationship" name="mobileNewDependentRelationship"><option>Spouse</option><option>Child</option><option>Other</option></select></label><label>Date of birth<input type="date" name="mobileNewDependentDob" /></label><fieldset class="mobile-radio-group"><legend>Gender</legend><label><input type="radio" name="mobileDependentGender" /> Male</label><label><input type="radio" name="mobileDependentGender" /> Female</label></fieldset><label>SSN<input type="password" name="mobileNewDependentSsn" /></label><div class="mobile-modal-actions"><button type="button" class="secondary-button" (click)="dependentModal.set('select')">Close</button><button type="button" class="primary-button" (click)="saveNewDependent()" [disabled]="!newDependent.name.trim()">Save</button></div></section></div> }
-
-  @if (activePage() === 'home') { <section class="mobile-coverage" aria-labelledby="mobile-coverage-title">
-    <div class="mobile-section-label coverage-section-heading"><span id="mobile-coverage-title">CURRENT COVERAGE</span><button type="button" class="quiet-button" (click)="resetDemo()" [disabled]="busy()">{{ busy() ? 'Resetting…' : 'Reset demo' }}</button></div>
-    @if (currentCoverage().length) { <div class="mobile-coverage-list">@for (row of currentCoverage(); track row.coverage + row.plan) { <article class="mobile-coverage-row"><strong>{{ row.coverage }}</strong><span>{{ row.plan }}</span><small>{{ row.effectiveDate }} · {{ row.status }}</small></article> }</div> }
-    @else { <div class="mobile-coverage-empty"><strong>No coverage on file</strong><span>Your selected TRS-Care plans and submitted Medicare information will appear here.</span></div> }
-    @if (resetMessage()) { <p class="feature-success mobile-reset-message" role="status">{{ resetMessage() }}</p> }
-  </section> }
-
-  @if (activePage() === 'mbi') { <section class="feature-page-back"><button type="button" class="secondary-button" (click)="returnToHealthHome()">← Back to Health</button></section><section class="mobile-mbi" id="mobile-mbi-update" aria-labelledby="mobile-mbi-title">
-    <div class="mobile-section-label" id="mobile-mbi-title">MEDICARE BENEFICIARY IDENTIFIER</div>
-    <p class="mobile-mbi-intro">Select a person, enter the MBI twice, and submit it for verification.</p>
-    @if (mbiError()) { <p class="feature-error" role="alert">{{ mbiError() }}</p> }
-    @if (mbiPhotoStatus()) { <p class="feature-success" role="status">{{ mbiPhotoStatus() }}</p> }
-    <div class="mobile-mbi-people" role="tablist" aria-label="Select person for MBI update">
-      @for (record of draftMbiRecords; track record.relationship; let index = $index) {
-        <button type="button" role="tab" [attr.aria-selected]="selectedMbiIndex() === index" [class.selected]="selectedMbiIndex() === index" (click)="selectMbiPerson(index)">{{ record.name }}<small>{{ record.relationship }}</small></button>
-      }
-    </div>
-    @if (draftMbiRecords[selectedMbiIndex()]; as selectedMbi) {
-      <div class="mobile-mbi-form">
-        <label for="mobile-mbi-number">Medicare Number</label><input id="mobile-mbi-number" name="mobileMbiNumber" [(ngModel)]="selectedMbi.medicareNumber" autocomplete="off" inputmode="text" placeholder="Enter MBI" />
-        <label for="mobile-mbi-reentry">Re-enter Medicare Number</label><input id="mobile-mbi-reentry" name="mobileMbiReentry" [(ngModel)]="selectedMbi.reentryMedicareNumber" autocomplete="off" inputmode="text" placeholder="Re-enter MBI" />
-        <div class="mobile-mbi-date-grid"><label for="mobile-mbi-part-a">Part A start<input id="mobile-mbi-part-a" name="mobileMbiPartA" type="date" [(ngModel)]="selectedMbi.partAStartDate" /></label><label for="mobile-mbi-part-b">Part B start<input id="mobile-mbi-part-b" name="mobileMbiPartB" type="date" [(ngModel)]="selectedMbi.partBStartDate" /></label></div>
-        <button type="button" class="camera-button" (click)="takeMbiPhoto()" [disabled]="mbiBusy()"><span aria-hidden="true">⌾</span> Take photo and read card</button>
+<section
+  class="mobile-feature"
+  [attr.aria-busy]="loading() || busy() || enrollmentLoading() || enrollmentSaving() || mbiBusy()"
+>
+  @if (activePage() === 'home') {
+    <header class="feature-heading">
+      <div>
+        <p class="eyebrow">HEALTH</p>
+        <h2 id="health-title">Health coverage</h2>
+        <p class="feature-subtitle">Manage your TRS-Care coverage and Medicare information.</p>
       </div>
+      <button
+        type="button"
+        class="quiet-button"
+        (click)="refresh()"
+        [disabled]="loading() || busy()"
+        aria-label="Refresh Health data"
+      >
+        {{ loading() ? 'Loading…' : 'Refresh' }}
+      </button>
+    </header>
+
+    @if (loading()) {
+      <p class="feature-status" role="status">Loading your Health information…</p>
     }
-    <div class="mobile-mbi-actions"><button type="button" class="secondary-button" (click)="cancelMbi()" [disabled]="mbiBusy()">Cancel</button><button type="button" class="primary-button" (click)="submitMbi()" [disabled]="mbiBusy()">{{ mbiBusy() ? 'Submitting…' : 'Submit' }}</button></div>
-    @if (mbiSaved()) { <p class="feature-success" role="status">Medicare information submitted.</p> }
-  </section> }
+    @if (error()) {
+      <p class="feature-error" role="alert">{{ error() }}</p>
+    }
 
-  @if (activePage() === 'home') { <section class="feature-card" aria-labelledby="health-card-title">
-    <div id="health-card-title" class="feature-card-title">MYTRS HEALTH</div>
-    <div class="feature-summary">
-      <strong>{{ member().memberName }}</strong>
-      <span>{{ member().plan }} · {{ member().medical }}</span>
-      <span>${{ member().deductible }} deductible · ${{ member().fsaBalance }} FSA balance</span>
+    <section class="mobile-welcome" aria-labelledby="health-actions-title">
+      <p class="mobile-eyebrow">MYTRS HEALTH</p>
+      <h3 id="health-actions-title">Manage your TRS-Care benefits</h3>
+      <p>Choose an action to update coverage or submit Medicare information.</p>
+    </section>
+
+    <section class="mobile-action-grid" aria-label="Health policy actions">
+      <button
+        type="button"
+        class="mobile-action-card mobile-action-primary"
+        (click)="selectAction('TRS-Care Initial Enrollment')"
+        [disabled]="loading() || enrollmentLoading()"
+        aria-describedby="enrollment-action-description"
+      >
+        <span class="mobile-action-icon" aria-hidden="true">♥</span>
+        <span>
+          <strong>Initial enrollment</strong>
+          <small id="enrollment-action-description"
+            >Enroll in Medical, Dental, or Vision coverage.</small
+          >
+        </span>
+        <span class="action-chevron" aria-hidden="true">›</span>
+      </button>
+
+      <button
+        type="button"
+        class="mobile-action-card"
+        (click)="selectAction('Submit Medicare Beneficiary Identifier (MBI)')"
+        [disabled]="loading() || !draftMbiRecords.length"
+        aria-describedby="mbi-action-description"
+      >
+        <span class="mobile-action-icon" aria-hidden="true">▣</span>
+        <span>
+          <strong>Update Medicare information</strong>
+          <small id="mbi-action-description"
+            >Submit an MBI for yourself or an eligible dependent.</small
+          >
+        </span>
+        <span class="action-chevron" aria-hidden="true">›</span>
+      </button>
+    </section>
+
+    @if (actionMessage()) {
+      <p class="feature-success" role="status">{{ actionMessage() }}</p>
+    }
+    @if (enrollmentError()) {
+      <p class="feature-error" role="alert">{{ enrollmentError() }}</p>
+    }
+    @if (enrollmentMessage()) {
+      <p class="feature-success" role="status">{{ enrollmentMessage() }}</p>
+    }
+
+    <section class="mobile-coverage" aria-labelledby="mobile-coverage-title">
+      <div class="mobile-section-label coverage-section-heading">
+        <span id="mobile-coverage-title">CURRENT COVERAGE</span>
+        <button type="button" class="quiet-button" (click)="resetDemo()" [disabled]="busy()">
+          {{ busy() ? 'Restoring…' : 'Restore sample' }}
+        </button>
+      </div>
+
+      @if (currentCoverage().length) {
+        <div class="mobile-coverage-list">
+          @for (row of currentCoverage(); track row.coverage + row.plan) {
+            <article class="mobile-coverage-row">
+              <strong>{{ row.coverage }}</strong>
+              <span>{{ row.plan }}</span>
+              <small>{{ row.effectiveDate }} · {{ row.status }}</small>
+            </article>
+          }
+        </div>
+      } @else {
+        <div class="mobile-coverage-empty">
+          <strong>No coverage on file</strong>
+          <span>Your selected plans and submitted Medicare information will appear here.</span>
+        </div>
+      }
+
+      @if (resetMessage()) {
+        <p class="feature-success mobile-reset-message" role="status">{{ resetMessage() }}</p>
+      }
+    </section>
+
+    <section class="feature-card" aria-labelledby="health-card-title">
+      <div id="health-card-title" class="feature-card-title">MYTRS HEALTH</div>
+      <div class="feature-summary">
+        <strong>{{ member().memberName }}</strong>
+        <span>{{ member().plan }} · {{ member().medical }}</span>
+        <span>${{ member().deductible }} deductible · ${{ member().fsaBalance }} FSA balance</span>
+      </div>
+    </section>
+  } @else if (activePage() === 'enrollment') {
+    <section class="mobile-subpage" aria-labelledby="mobile-enrollment-title">
+      <header class="mobile-subpage-header">
+        <button
+          type="button"
+          class="back-button"
+          (click)="returnToHealthHome()"
+          [disabled]="enrollmentSaving()"
+          aria-label="Back to Health overview"
+        >
+          <span aria-hidden="true">‹</span>
+        </button>
+        <div>
+          <p class="mobile-eyebrow">TRS-CARE INITIAL ENROLLMENT</p>
+          <h2 id="mobile-enrollment-title">Your enrollment</h2>
+          <p>Complete each step, then review and submit your selections.</p>
+        </div>
+      </header>
+
+      @if (enrollmentLoading()) {
+        <p class="feature-status" role="status">Checking for a saved enrollment…</p>
+      }
+      @if (enrollmentMessage()) {
+        <p class="feature-success" role="status">{{ enrollmentMessage() }}</p>
+      }
+      @if (enrollmentError()) {
+        <p class="feature-error" role="alert">{{ enrollmentError() }}</p>
+      }
+
+      @if (enrollment) {
+        <ol class="mobile-stepper-nav" aria-label="Enrollment progress">
+          @for (label of enrollmentSteps; track label; let index = $index) {
+            <li
+              [class.current]="enrollmentStep() === index + 1"
+              [class.complete]="enrollmentStep() > index + 1"
+              [attr.aria-current]="enrollmentStep() === index + 1 ? 'step' : null"
+            >
+              <span class="step-number">{{ index + 1 }}</span>
+              <span>{{ label }}</span>
+            </li>
+          }
+        </ol>
+
+        <form
+          class="mobile-enrollment-form"
+          (ngSubmit)="advanceEnrollment()"
+          autocomplete="on"
+          novalidate
+          [attr.aria-busy]="enrollmentSaving()"
+        >
+          @if (enrollmentStep() === 1) {
+            <fieldset class="mobile-enrollment-card">
+              <legend>Disclosure and consent</legend>
+              <div class="mobile-legal" tabindex="0">
+                <p>
+                  This application allows an eligible retiree to enroll in TRS-Care medical and
+                  prescription, Dental, and Vision coverage.
+                </p>
+                <p>
+                  Coverage begins after a completed application is received within the eligible
+                  enrollment period. You may amend dependent selections during the enrollment
+                  period.
+                </p>
+                <p>After submission, corrections must be handled through TRS Health.</p>
+              </div>
+              <label class="mobile-check" for="mobile-legal-accepted">
+                <input
+                  id="mobile-legal-accepted"
+                  type="checkbox"
+                  [(ngModel)]="enrollment.legalAccepted"
+                  name="legalAccepted"
+                />
+                <span>I have read and understand the disclosure.</span>
+              </label>
+            </fieldset>
+          }
+
+          @if (enrollmentStep() === 2) {
+            <fieldset class="mobile-enrollment-card">
+              <legend>Verify your information</legend>
+              <p class="mobile-muted">
+                Review the information on file. Corrections would continue through Account
+                Management.
+              </p>
+              <label for="mobile-enrollment-name">
+                Member name
+                <input
+                  id="mobile-enrollment-name"
+                  [(ngModel)]="enrollment.memberName"
+                  name="memberName"
+                  autocomplete="name"
+                  required
+                />
+              </label>
+              <label for="mobile-enrollment-address">
+                Mailing address
+                <textarea
+                  id="mobile-enrollment-address"
+                  [(ngModel)]="enrollment.mailingAddress"
+                  name="mailingAddress"
+                  autocomplete="street-address"
+                  rows="3"
+                  required
+                ></textarea>
+              </label>
+              <label class="mobile-check" for="mobile-demographic-verified">
+                <input
+                  id="mobile-demographic-verified"
+                  type="checkbox"
+                  [(ngModel)]="enrollment.demographicVerified"
+                  name="demographicVerified"
+                />
+                <span>My information is correct.</span>
+              </label>
+            </fieldset>
+          }
+
+          @if (enrollmentStep() === 3) {
+            <fieldset class="mobile-enrollment-card">
+              <legend>Choose your plans</legend>
+              <label for="mobile-effective-date">
+                Effective date
+                <select
+                  id="mobile-effective-date"
+                  [(ngModel)]="enrollment.effectiveDate"
+                  name="effectiveDate"
+                  required
+                >
+                  <option value="">Choose a date</option>
+                  <option value="2026-10-01">10/01/2026</option>
+                  <option value="2026-11-01">11/01/2026</option>
+                  <option value="2026-12-01">12/01/2026</option>
+                </select>
+              </label>
+
+              <p class="mobile-form-hint">
+                Choose at least one plan. Plan selections apply to the people listed below.
+              </p>
+              @for (coverage of coverageOptions; track coverage.key) {
+                <div class="mobile-plan-card">
+                  <div class="mobile-plan-title">
+                    <span>
+                      <strong>{{ coverage.label }}</strong>
+                      <small>{{ coverage.description }}</small>
+                    </span>
+                    <button type="button" class="link-button" (click)="openDependentModal()">
+                      Manage dependents
+                    </button>
+                  </div>
+                  @for (person of enrollmentPeople(); track person.name) {
+                    <label
+                      class="mobile-person-row"
+                      [for]="'mobile-' + coverage.key + '-' + person.name"
+                    >
+                      <span
+                        >{{ person.name }}<small>{{ person.relationship }}</small></span
+                      >
+                      <select
+                        [id]="'mobile-' + coverage.key + '-' + person.name"
+                        [name]="'mobile-' + coverage.key + '-' + person.name"
+                        [(ngModel)]="$any(enrollment)[coverage.key]"
+                      >
+                        <option value="None">Do not enroll</option>
+                        <option value="Enroll">Enroll</option>
+                      </select>
+                    </label>
+                  }
+                </div>
+              }
+            </fieldset>
+          }
+
+          @if (enrollmentStep() === 4) {
+            <fieldset class="mobile-enrollment-card">
+              <legend>Acknowledgment and acceptance</legend>
+              <div class="mobile-legal compact-legal">
+                <p>
+                  I acknowledge that the information is true and complete. I authorize TRS to
+                  administer the selected plans and understand that required contributions may be
+                  withheld or billed.
+                </p>
+              </div>
+              <fieldset class="mobile-radio-group">
+                <legend>Do you accept the terms? <span aria-hidden="true">*</span></legend>
+                <label for="mobile-terms-yes"
+                  ><input
+                    id="mobile-terms-yes"
+                    type="radio"
+                    name="termsAccepted"
+                    [(ngModel)]="enrollment.acknowledgmentAccepted"
+                    [value]="true"
+                  />
+                  Yes, I accept</label
+                >
+                <label for="mobile-terms-no"
+                  ><input
+                    id="mobile-terms-no"
+                    type="radio"
+                    name="termsAccepted"
+                    [(ngModel)]="enrollment.acknowledgmentAccepted"
+                    [value]="false"
+                  />
+                  No, I do not accept</label
+                >
+              </fieldset>
+              <label for="mobile-enrollment-signature">
+                Signature <span aria-hidden="true">*</span>
+                <input
+                  id="mobile-enrollment-signature"
+                  [(ngModel)]="enrollment.signature"
+                  name="signature"
+                  autocomplete="name"
+                  placeholder="Type your full name"
+                  required
+                />
+              </label>
+            </fieldset>
+          }
+
+          @if (enrollmentStep() === 5) {
+            <fieldset class="mobile-enrollment-card">
+              <legend>Review and submit</legend>
+              <p class="mobile-muted">
+                Review your selections. You cannot edit this application after submission.
+              </p>
+              <div class="mobile-summary-table" aria-label="Enrollment selections">
+                @for (person of enrollmentPeople(); track person.name) {
+                  <div class="mobile-summary-row">
+                    <strong>{{ person.name }}</strong>
+                    <span>{{ person.relationship }}</span>
+                    <span>Medical {{ enrollment.medicalCoverage === 'Enroll' ? '✓' : '—' }}</span>
+                    <span>Dental {{ enrollment.dentalCoverage === 'Enroll' ? '✓' : '—' }}</span>
+                    <span>Vision {{ enrollment.visionCoverage === 'Enroll' ? '✓' : '—' }}</span>
+                  </div>
+                }
+              </div>
+              <dl class="mobile-premium-grid">
+                <div>
+                  <dt>Medical/Rx</dt>
+                  <dd>${{ premium('medicalCoverage') }}</dd>
+                </div>
+                <div>
+                  <dt>Dental</dt>
+                  <dd>${{ premium('dentalCoverage') }}</dd>
+                </div>
+                <div>
+                  <dt>Vision</dt>
+                  <dd>${{ premium('visionCoverage') }}</dd>
+                </div>
+                <div class="total">
+                  <dt>Total</dt>
+                  <dd>${{ totalPremium() }}</dd>
+                </div>
+              </dl>
+              <label class="mobile-check" for="mobile-review-accepted">
+                <input
+                  id="mobile-review-accepted"
+                  type="checkbox"
+                  [(ngModel)]="enrollment.acknowledgmentAccepted"
+                  name="reviewAccepted"
+                />
+                <span>I accept these selections and premiums.</span>
+              </label>
+            </fieldset>
+          }
+
+          @if (enrollmentSaving()) {
+            <p class="feature-status" role="status">Saving your application…</p>
+          }
+          @if (enrollmentError()) {
+            <p class="feature-error" role="alert">{{ enrollmentError() }}</p>
+          }
+
+          <div class="mobile-enrollment-actions">
+            <button
+              type="button"
+              class="secondary-button"
+              (click)="closeEnrollment()"
+              [disabled]="enrollmentSaving()"
+            >
+              Save &amp; close
+            </button>
+            <button
+              type="button"
+              class="secondary-button"
+              (click)="previousEnrollmentStep()"
+              [disabled]="enrollmentStep() === 1 || enrollmentSaving()"
+            >
+              Back
+            </button>
+            <button type="submit" class="primary-button" [disabled]="enrollmentSaving()">
+              {{ enrollmentStep() < enrollmentSteps.length ? 'Continue' : 'Submit enrollment' }}
+            </button>
+          </div>
+        </form>
+      }
+    </section>
+  } @else {
+    <section class="mobile-subpage" aria-labelledby="mobile-mbi-title">
+      <header class="mobile-subpage-header">
+        <button
+          type="button"
+          class="back-button"
+          (click)="returnToHealthHome()"
+          aria-label="Back to Health overview"
+        >
+          <span aria-hidden="true">‹</span>
+        </button>
+        <div>
+          <p class="mobile-eyebrow">MEMBER RECORDS</p>
+          <h2 id="mobile-mbi-title">Medicare information</h2>
+          <p>Keep each person’s Medicare Beneficiary Identifier current.</p>
+        </div>
+      </header>
+
+      <section class="mobile-mbi" aria-labelledby="mobile-mbi-form-title">
+        <div class="mobile-section-label">MBI UPDATE</div>
+        <p id="mobile-mbi-form-title" class="mobile-mbi-intro">
+          Select a person, enter the MBI twice, and review the dates before submitting.
+        </p>
+
+        @if (mbiError()) {
+          <p class="feature-error mobile-inline-message" role="alert">{{ mbiError() }}</p>
+        }
+        @if (mbiPhotoStatus()) {
+          <p class="feature-success mobile-inline-message" role="status">{{ mbiPhotoStatus() }}</p>
+        }
+
+        @if (draftMbiRecords.length) {
+          <div
+            class="mobile-mbi-people"
+            role="tablist"
+            aria-label="Select person for Medicare information"
+          >
+            @for (record of draftMbiRecords; track record.relationship; let index = $index) {
+              <button
+                type="button"
+                role="tab"
+                [id]="'mobile-mbi-tab-' + index"
+                [attr.aria-controls]="'mobile-mbi-panel-' + index"
+                [attr.aria-selected]="selectedMbiIndex() === index"
+                [attr.tabindex]="selectedMbiIndex() === index ? 0 : -1"
+                [class.selected]="selectedMbiIndex() === index"
+                (click)="selectMbiPerson(index)"
+              >
+                <strong>{{ record.name }}</strong>
+                <small>{{ record.relationship }}</small>
+              </button>
+            }
+          </div>
+
+          @if (draftMbiRecords[selectedMbiIndex()]; as selectedMbi) {
+            <form
+              class="mobile-mbi-form"
+              [id]="'mobile-mbi-panel-' + selectedMbiIndex()"
+              role="tabpanel"
+              [attr.aria-labelledby]="'mobile-mbi-tab-' + selectedMbiIndex()"
+              (ngSubmit)="submitMbi()"
+              autocomplete="off"
+              novalidate
+            >
+              <div class="mobile-field-group">
+                <label for="mobile-mbi-number">Medicare Beneficiary Identifier</label>
+                <span class="mobile-field-hint">11 characters, as shown on the Medicare card.</span>
+                <input
+                  id="mobile-mbi-number"
+                  name="medicareNumber"
+                  [(ngModel)]="selectedMbi.medicareNumber"
+                  autocomplete="off"
+                  autocapitalize="characters"
+                  autocorrect="off"
+                  spellcheck="false"
+                  inputmode="text"
+                  maxlength="11"
+                  required
+                  placeholder="Enter MBI"
+                />
+              </div>
+
+              <div class="mobile-field-group">
+                <label for="mobile-mbi-reentry">Re-enter Medicare Beneficiary Identifier</label>
+                <input
+                  id="mobile-mbi-reentry"
+                  name="reentryMedicareNumber"
+                  [(ngModel)]="selectedMbi.reentryMedicareNumber"
+                  autocomplete="off"
+                  autocapitalize="characters"
+                  autocorrect="off"
+                  spellcheck="false"
+                  inputmode="text"
+                  maxlength="11"
+                  required
+                  placeholder="Re-enter MBI"
+                />
+              </div>
+
+              <div class="mobile-mbi-date-grid">
+                <label for="mobile-mbi-part-a">
+                  Part A start date
+                  <input
+                    id="mobile-mbi-part-a"
+                    name="partAStartDate"
+                    type="date"
+                    [(ngModel)]="selectedMbi.partAStartDate"
+                  />
+                </label>
+                <label for="mobile-mbi-part-b">
+                  Part B start date
+                  <input
+                    id="mobile-mbi-part-b"
+                    name="partBStartDate"
+                    type="date"
+                    [(ngModel)]="selectedMbi.partBStartDate"
+                  />
+                </label>
+              </div>
+
+              <button
+                type="button"
+                class="camera-button"
+                (click)="takeMbiPhoto()"
+                [disabled]="mbiBusy()"
+              >
+                <span aria-hidden="true">⌾</span>
+                {{ mbiBusy() ? 'Reading card…' : 'Scan card with camera' }}
+              </button>
+
+              <div class="mobile-mbi-actions">
+                <button
+                  type="button"
+                  class="secondary-button"
+                  (click)="cancelMbi()"
+                  [disabled]="mbiBusy()"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  class="primary-button"
+                  [disabled]="mbiBusy() || !canSubmitMbi()"
+                >
+                  {{ mbiBusy() ? 'Submitting…' : 'Submit update' }}
+                </button>
+              </div>
+            </form>
+          }
+        } @else {
+          <div class="mobile-coverage-empty">
+            <strong>No Medicare records available</strong>
+            <span>Return to Health and try again after your member information loads.</span>
+          </div>
+        }
+      </section>
+    </section>
+  }
+
+  @if (enrollmentModal() === 'eligibility') {
+    <div class="mobile-modal-backdrop" role="presentation">
+      <section
+        class="mobile-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="mobile-eligibility-title"
+        aria-describedby="mobile-eligibility-description"
+        tabindex="-1"
+      >
+        <button
+          type="button"
+          class="mobile-modal-close"
+          (click)="closeEnrollmentPrompt()"
+          aria-label="Close eligibility question"
+        >
+          ×
+        </button>
+        <p class="mobile-eyebrow">BEFORE YOU START</p>
+        <h3 id="mobile-eligibility-title">Dependent Medicare eligibility</h3>
+        <p id="mobile-eligibility-description">
+          <strong
+            >Will anyone you are enrolling be eligible for Medicare on the coverage start
+            date?</strong
+          >
+        </p>
+        <p class="mobile-muted">
+          This includes SSDI, End Stage Renal Disease, or age 65+. Medicare-eligible dependents
+          follow a separate application process.
+        </p>
+        <div class="mobile-modal-actions">
+          <button
+            type="button"
+            class="secondary-button"
+            (click)="chooseEligibility('MEDICARE')"
+            [disabled]="enrollmentSaving()"
+          >
+            Separate application
+          </button>
+          <button
+            type="button"
+            class="primary-button"
+            (click)="chooseEligibility('CONTINUE')"
+            [disabled]="enrollmentSaving()"
+          >
+            Continue
+          </button>
+        </div>
+      </section>
     </div>
-  </section>
+  }
 
+  @if (enrollmentModal() === 'resume' && enrollment) {
+    <div class="mobile-modal-backdrop" role="presentation">
+      <section
+        class="mobile-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="mobile-resume-title"
+        aria-describedby="mobile-resume-description"
+        tabindex="-1"
+      >
+        <button
+          type="button"
+          class="mobile-modal-close"
+          (click)="closeEnrollmentPrompt()"
+          aria-label="Close saved enrollment dialog"
+        >
+          ×
+        </button>
+        <p class="mobile-eyebrow">SAVED APPLICATION</p>
+        <h3 id="mobile-resume-title">Continue your enrollment?</h3>
+        <p id="mobile-resume-description">
+          Your application was started on {{ enrollment.startDate }}. You can continue editing it or
+          cancel the saved draft.
+        </p>
+        <div class="mobile-modal-actions">
+          <button
+            type="button"
+            class="secondary-button"
+            (click)="cancelEnrollment()"
+            [disabled]="enrollmentSaving()"
+          >
+            Cancel draft
+          </button>
+          <button
+            type="button"
+            class="primary-button"
+            (click)="continueEnrollment()"
+            [disabled]="enrollmentSaving()"
+          >
+            Continue
+          </button>
+        </div>
+      </section>
+    </div>
+  }
+
+  @if (dependentModal() === 'select' && enrollment) {
+    <div class="mobile-modal-backdrop" role="presentation">
+      <section
+        class="mobile-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="mobile-dependent-title"
+        aria-describedby="mobile-dependent-description"
+        tabindex="-1"
+      >
+        <button
+          type="button"
+          class="mobile-modal-close"
+          (click)="closeDependentModal()"
+          aria-label="Close dependent selector"
+        >
+          ×
+        </button>
+        <h3 id="mobile-dependent-title">Manage dependents</h3>
+        <p id="mobile-dependent-description" class="mobile-muted">
+          Choose someone already associated with the member account, or add a dependent.
+        </p>
+        @for (dependent of enrollment.dependents; track dependent.id) {
+          <div class="mobile-dependent-option">
+            <span
+              ><strong>{{ dependent.name }}</strong
+              ><small>{{ dependent.relationship }}</small></span
+            >
+            <button
+              type="button"
+              class="primary-button"
+              (click)="addExistingDependent(dependent.id)"
+              [disabled]="dependent.selected"
+            >
+              {{ dependent.selected ? 'Added' : 'Add' }}
+            </button>
+          </div>
+        }
+        @if (!enrollment.dependents.length) {
+          <p class="mobile-muted">No dependents are currently listed.</p>
+        }
+        <button type="button" class="secondary-button full-button" (click)="openNewDependent()">
+          Add new dependent
+        </button>
+      </section>
+    </div>
+  }
+
+  @if (dependentModal() === 'new') {
+    <div class="mobile-modal-backdrop" role="presentation">
+      <section
+        class="mobile-modal dependent-form"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="mobile-new-dependent-title"
+        aria-describedby="mobile-new-dependent-description"
+        tabindex="-1"
+      >
+        <button
+          type="button"
+          class="mobile-modal-close"
+          (click)="openDependentModal()"
+          aria-label="Back to dependent list"
+        >
+          ‹
+        </button>
+        <h3 id="mobile-new-dependent-title">Add dependent</h3>
+        <p id="mobile-new-dependent-description" class="mobile-muted">
+          Fields marked with <span aria-hidden="true">*</span> are required.
+        </p>
+
+        <label for="mobile-dependent-prefix">
+          Prefix
+          <select
+            id="mobile-dependent-prefix"
+            [(ngModel)]="newDependent.prefix"
+            name="dependentPrefix"
+          >
+            <option value="">Select prefix</option>
+            <option>Mr.</option>
+            <option>Ms.</option>
+            <option>Mrs.</option>
+            <option>Dr.</option>
+          </select>
+        </label>
+        <label for="mobile-dependent-first-name">
+          Legal first name <span aria-hidden="true">*</span>
+          <input
+            id="mobile-dependent-first-name"
+            [(ngModel)]="newDependent.firstName"
+            name="dependentFirstName"
+            autocomplete="given-name"
+            required
+          />
+        </label>
+        <label for="mobile-dependent-middle-name">
+          Legal middle name
+          <input
+            id="mobile-dependent-middle-name"
+            [(ngModel)]="newDependent.middleName"
+            name="dependentMiddleName"
+            autocomplete="additional-name"
+          />
+        </label>
+        <label for="mobile-dependent-last-name">
+          Legal last name <span aria-hidden="true">*</span>
+          <input
+            id="mobile-dependent-last-name"
+            [(ngModel)]="newDependent.lastName"
+            name="dependentLastName"
+            autocomplete="family-name"
+            required
+          />
+        </label>
+        <label for="mobile-dependent-suffix">
+          Suffix
+          <select
+            id="mobile-dependent-suffix"
+            [(ngModel)]="newDependent.suffix"
+            name="dependentSuffix"
+          >
+            <option value="">Select suffix</option>
+            <option>Jr.</option>
+            <option>Sr.</option>
+            <option>II</option>
+            <option>III</option>
+          </select>
+        </label>
+        <label for="mobile-dependent-relationship">
+          Relationship <span aria-hidden="true">*</span>
+          <select
+            id="mobile-dependent-relationship"
+            [(ngModel)]="newDependent.relationship"
+            name="dependentRelationship"
+            required
+          >
+            <option>Spouse</option>
+            <option>Child</option>
+            <option>Other</option>
+          </select>
+        </label>
+        <label for="mobile-dependent-date-of-birth">
+          Date of birth <span aria-hidden="true">*</span>
+          <input
+            id="mobile-dependent-date-of-birth"
+            type="date"
+            [(ngModel)]="newDependent.dateOfBirth"
+            name="dependentDateOfBirth"
+            autocomplete="bday"
+            required
+          />
+        </label>
+        <fieldset class="mobile-radio-group">
+          <legend>Gender <span aria-hidden="true">*</span></legend>
+          <label for="mobile-dependent-gender-male"
+            ><input
+              id="mobile-dependent-gender-male"
+              type="radio"
+              name="dependentGender"
+              [(ngModel)]="newDependent.gender"
+              value="Male"
+            />
+            Male</label
+          >
+          <label for="mobile-dependent-gender-female"
+            ><input
+              id="mobile-dependent-gender-female"
+              type="radio"
+              name="dependentGender"
+              [(ngModel)]="newDependent.gender"
+              value="Female"
+            />
+            Female</label
+          >
+        </fieldset>
+        <label for="mobile-dependent-ssn">
+          SSN <span aria-hidden="true">*</span>
+          <input
+            id="mobile-dependent-ssn"
+            type="password"
+            [(ngModel)]="newDependent.ssn"
+            name="dependentSsn"
+            autocomplete="off"
+            inputmode="numeric"
+            maxlength="11"
+            required
+          />
+        </label>
+
+        <div class="mobile-modal-actions">
+          <button type="button" class="secondary-button" (click)="openDependentModal()">
+            Back
+          </button>
+          <button
+            type="button"
+            class="primary-button"
+            (click)="saveNewDependent()"
+            [disabled]="
+              !newDependent.firstName.trim() ||
+              !newDependent.lastName.trim() ||
+              !newDependent.dateOfBirth ||
+              !newDependent.gender ||
+              !newDependent.ssn.trim() ||
+              enrollmentSaving()
+            "
+          >
+            Save dependent
+          </button>
+        </div>
+      </section>
+    </div>
   }
 </section>
