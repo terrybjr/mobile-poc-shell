@@ -44,18 +44,26 @@ export class App implements OnInit {
       return;
     }
 
+    const redirectUri = `${window.location.origin}/mobile-poc/wss-apps/`;
+    if (this.embeddedHostedMode && !this.hasKeycloakResponse()) {
+      try {
+        await this.redirectToHealthLogin(redirectUri);
+        return;
+      } catch (error) {
+        console.error('[Health Shell] embedded browser login redirect failed', this.describeError(error));
+      }
+    }
+
     try {
-      const redirectUri = `${window.location.origin}/mobile-poc/wss-apps/`;
       const authenticated = await this.keycloak.init({
-        // A hosted Shell inside the Pension WebView must follow the same OIDC
-        // flow as the browser. Check for the existing SSO session first, then
-        // explicitly enter Keycloak when the WebView has no session yet.
-        onLoad: this.embeddedHostedMode ? 'check-sso' : 'login-required',
+        // The hosted Shell inside the Pension WebView follows the same
+        // browser redirect flow; it must not use the native credential flow.
+        onLoad: 'login-required',
         checkLoginIframe: false,
         redirectUri
       });
       if (!authenticated) {
-        await this.keycloak.login({ redirectUri });
+        await this.redirectToHealthLogin(redirectUri);
         return;
       }
 
@@ -63,10 +71,10 @@ export class App implements OnInit {
       window.dispatchEvent(new Event('health-auth-ready'));
       this.authReady.set(true);
     } catch (error) {
-      console.error('[Health Shell] browser sign-in failed', error);
+      console.error('[Health Shell] browser sign-in failed', this.describeError(error));
       if (this.embeddedHostedMode) {
         try {
-          await this.keycloak.login({ redirectUri: `${window.location.origin}/mobile-poc/wss-apps/` });
+          await this.redirectToHealthLogin(`${window.location.origin}/mobile-poc/wss-apps/`);
           return;
         } catch {
           // Fall through to the same visible error used by the browser build.
@@ -74,6 +82,20 @@ export class App implements OnInit {
       }
       this.error.set('Unable to sign in to the Health application.');
     }
+  }
+
+  private async redirectToHealthLogin(redirectUri: string): Promise<void> {
+    const loginUrl = await this.keycloak.createLoginUrl({ redirectUri });
+    window.location.assign(loginUrl);
+  }
+
+  private hasKeycloakResponse(): boolean {
+    return /(?:^|[&#?])(code|error)=/.test(`${window.location.search}${window.location.hash}`);
+  }
+
+  private describeError(error: unknown): unknown {
+    if (error instanceof Error) return { name: error.name, message: error.message, stack: error.stack };
+    return String(error);
   }
 
   logout(): void {
