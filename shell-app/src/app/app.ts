@@ -20,7 +20,11 @@ declare global {
   styleUrl: './app.css'
 })
 export class App implements OnInit {
-  protected readonly mobileMode = Capacitor.isNativePlatform();
+  // A hosted Shell page can also be loaded inside another Capacitor WebView
+  // (for example the legacy Pension passthrough). Only the Shell's own local
+  // Capacitor origin should render the dedicated native experience.
+  protected readonly mobileMode = Capacitor.isNativePlatform()
+    && (window.location.protocol === 'capacitor:' || window.location.hostname === 'localhost');
   protected readonly mobileAuth = inject(MobileAuthService);
 
   private readonly keycloak = new Keycloak({
