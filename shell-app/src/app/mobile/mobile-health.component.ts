@@ -60,6 +60,7 @@ export class MobileHealthComponent implements OnInit {
   protected readonly enrollmentMessage = signal('');
   protected readonly enrollmentError = signal('');
   protected readonly enrollmentStep = signal(1);
+  protected readonly activePage = signal<'home' | 'mbi' | 'enrollment'>('home');
   protected draftMbiRecords: MbiRecord[] = INITIAL_MBI.map(record => ({ ...record }));
   protected enrollment: EnrollmentDraft | null = null;
   protected newDependent: EnrollmentDependent = { id: '', name: '', relationship: 'Child', selected: true };
@@ -89,6 +90,7 @@ export class MobileHealthComponent implements OnInit {
 
   protected selectAction(action: string): void {
     if (action.includes('Initial Enrollment')) { this.beginEnrollment(); return; }
+    if (action.includes('MBI')) { this.activePage.set('mbi'); this.actionMessage.set(''); return; }
     this.actionMessage.set(`${action} is ready for the next proof-of-concept step.`);
     if (action.includes('MBI')) document.getElementById('mobile-mbi-update')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
@@ -96,7 +98,7 @@ export class MobileHealthComponent implements OnInit {
   protected beginEnrollment(): void {
     const token = window.__mobileAuth?.token;
     if (!token) { this.enrollmentError.set('Your mobile session is no longer available.'); return; }
-    this.enrollmentError.set(''); this.enrollmentMessage.set('');
+    this.activePage.set('enrollment'); this.enrollmentError.set(''); this.enrollmentMessage.set('');
     this.http.get<EnrollmentDraft | null>(`${API_BASE}/mobile-poc/wss-apps/health-ws/api/health/enrollment`, this.options(token)).subscribe({
       next: draft => draft?.status === 'INCOMPLETE' ? (this.enrollment = { ...draft }, this.enrollmentStep.set(draft.currentStep || 1), this.enrollmentModal.set('resume')) : draft?.status === 'SUBMITTED' ? this.enrollmentMessage.set('This demo enrollment has already been submitted.') : this.createEnrollment(),
       error: error => { this.logApiError('GET /enrollment', error); this.enrollmentError.set(this.loadError(error)); }
@@ -120,7 +122,8 @@ export class MobileHealthComponent implements OnInit {
     this.persistEnrollment(() => { this.enrollmentModal.set('none'); this.enrollmentOpen.set(true); });
   }
 
-  protected closeEnrollment(): void { if (this.enrollment) this.persistEnrollment(() => { this.enrollmentOpen.set(false); this.enrollmentMessage.set('Enrollment draft saved.'); }); }
+  protected closeEnrollment(): void { if (this.enrollment) this.persistEnrollment(() => { this.enrollmentOpen.set(false); this.activePage.set('home'); this.enrollmentMessage.set('Enrollment draft saved.'); }); }
+  protected returnToHealthHome(): void { this.activePage.set('home'); this.enrollmentOpen.set(false); this.enrollmentModal.set('none'); this.dependentModal.set('none'); this.enrollmentError.set(''); this.enrollmentMessage.set(''); this.actionMessage.set(''); }
   protected cancelEnrollment(): void { const token = window.__mobileAuth?.token; if (!token) return; this.http.delete<EnrollmentDraft>(`${API_BASE}/mobile-poc/wss-apps/health-ws/api/health/enrollment`, this.options(token)).subscribe({ next: draft => { this.enrollment = { ...draft }; this.enrollmentOpen.set(false); this.enrollmentModal.set('none'); this.enrollmentMessage.set('Enrollment draft cancelled.'); }, error: error => this.enrollmentError.set(this.updateError(error)) }); }
   protected previousEnrollmentStep(): void { this.enrollmentStep.update(step => Math.max(1, step - 1)); }
 

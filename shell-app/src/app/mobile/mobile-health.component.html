@@ -14,7 +14,7 @@
     <p class="feature-error" role="alert">{{ error() }}</p>
   }
 
-  <section class="mobile-welcome" aria-label="Health actions introduction">
+  @if (activePage() === 'home') { <section class="mobile-welcome" aria-label="Health actions introduction">
     <p class="mobile-eyebrow">MYTRS HEALTH</p>
     <strong>Manage your TRS-Care benefits</strong>
     <span>Select an action below to continue.</span>
@@ -26,7 +26,7 @@
   </section>
   @if (actionMessage()) {
     <p class="feature-success" role="status">{{ actionMessage() }}</p>
-  }
+  } }
   @if (enrollmentError()) { <p class="feature-error" role="alert">{{ enrollmentError() }}</p> }
   @if (enrollmentMessage()) { <p class="feature-success" role="status">{{ enrollmentMessage() }}</p> }
 
@@ -45,12 +45,12 @@
   @if (dependentModal() === 'select' && enrollment) { <div class="mobile-modal-backdrop"><section class="mobile-modal" role="dialog" aria-modal="true" aria-labelledby="mobile-dependent-title"><button type="button" class="mobile-modal-close" (click)="dependentModal.set('none')" aria-label="Close">×</button><h3 id="mobile-dependent-title">Select dependent</h3><p class="mobile-muted">Choose someone already associated with the member account.</p>@for (dependent of enrollment.dependents; track dependent.id) { <div class="mobile-dependent-option"><span><strong>{{ dependent.name }}</strong><small>{{ dependent.relationship }}</small></span><button type="button" class="primary-button" (click)="addExistingDependent(dependent.id)" [disabled]="dependent.selected">{{ dependent.selected ? 'Added' : 'Select' }}</button></div> }<button type="button" class="secondary-button full-button" (click)="openNewDependent()">Add new dependent</button></section></div> }
   @if (dependentModal() === 'new') { <div class="mobile-modal-backdrop"><section class="mobile-modal" role="dialog" aria-modal="true" aria-labelledby="mobile-new-dependent-title"><button type="button" class="mobile-modal-close" (click)="dependentModal.set('select')" aria-label="Close">×</button><h3 id="mobile-new-dependent-title">Add dependent</h3><p class="mobile-muted">Fields marked * are required.</p><label>Legal first name *<input [(ngModel)]="newDependent.name" name="mobileNewDependentName" /></label><label>Relationship *<select [(ngModel)]="newDependent.relationship" name="mobileNewDependentRelationship"><option>Spouse</option><option>Child</option><option>Other</option></select></label><label>Date of birth<input type="date" name="mobileNewDependentDob" /></label><fieldset class="mobile-radio-group"><legend>Gender</legend><label><input type="radio" name="mobileDependentGender" /> Male</label><label><input type="radio" name="mobileDependentGender" /> Female</label></fieldset><label>SSN<input type="password" name="mobileNewDependentSsn" /></label><div class="mobile-modal-actions"><button type="button" class="secondary-button" (click)="dependentModal.set('select')">Close</button><button type="button" class="primary-button" (click)="saveNewDependent()" [disabled]="!newDependent.name.trim()">Save</button></div></section></div> }
 
-  <section class="mobile-coverage" aria-labelledby="mobile-coverage-title">
+  @if (activePage() === 'home') { <section class="mobile-coverage" aria-labelledby="mobile-coverage-title">
     <div class="mobile-section-label" id="mobile-coverage-title">CURRENT COVERAGE</div>
     <div class="mobile-coverage-empty"><strong>No coverage on file</strong><span>This proof-of-concept has no current TRS-Care coverage record.</span></div>
-  </section>
+  </section> }
 
-  <section class="mobile-mbi" id="mobile-mbi-update" aria-labelledby="mobile-mbi-title">
+  @if (activePage() === 'mbi') { <section class="feature-page-back"><button type="button" class="secondary-button" (click)="returnToHealthHome()">← Back to Health</button></section><section class="mobile-mbi" id="mobile-mbi-update" aria-labelledby="mobile-mbi-title">
     <div class="mobile-section-label" id="mobile-mbi-title">MEDICARE BENEFICIARY IDENTIFIER</div>
     <p class="mobile-mbi-intro">Select a person, enter the MBI twice, and submit it for verification.</p>
     @if (mbiError()) { <p class="feature-error" role="alert">{{ mbiError() }}</p> }
@@ -70,9 +70,9 @@
     }
     <div class="mobile-mbi-actions"><button type="button" class="secondary-button" (click)="cancelMbi()" [disabled]="mbiBusy()">Cancel</button><button type="button" class="primary-button" (click)="submitMbi()" [disabled]="mbiBusy() || !canSubmitMbi()">{{ mbiBusy() ? 'Submitting…' : 'Submit' }}</button></div>
     @if (mbiSaved()) { <p class="feature-success" role="status">Medicare information submitted.</p> }
-  </section>
+  </section> }
 
-  <section class="feature-card" aria-labelledby="health-card-title">
+  @if (activePage() === 'home') { <section class="feature-card" aria-labelledby="health-card-title">
     <div id="health-card-title" class="feature-card-title">MYTRS HEALTH</div>
     <div class="feature-summary">
       <strong>{{ member().memberName }}</strong>
@@ -109,7 +109,7 @@
         <button class="secondary-button" type="button" (click)="reset()">Restore sample values</button>
       </div>
     </fieldset>
-  </form>
+  </form> }
 
   @if (saved()) {
     <p class="feature-success" role="status">Health information updated.</p>
