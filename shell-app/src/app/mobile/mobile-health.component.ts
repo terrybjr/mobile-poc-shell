@@ -15,6 +15,15 @@ interface MbiRecord {
   partAStartDate: string; partBStartDate: string;
 }
 
+interface EnrollmentDependent { id: string; name: string; relationship: string; selected: boolean; }
+interface EnrollmentDraft {
+  id: string; startDate: string; dateSubmitted: string; status: string; currentStep: number;
+  eligibilityReviewed: boolean; eligibilityDecision: string; legalAccepted: boolean; demographicVerified: boolean;
+  memberName: string; mailingAddress: string; effectiveDate: string; medicalCoverage: string;
+  dentalCoverage: string; visionCoverage: string; acknowledgmentAccepted: boolean; signature: string;
+  dependents: EnrollmentDependent[];
+}
+
 const INITIAL_HEALTH: HealthSummary = {
   memberName: 'Jordan Davis', plan: 'TRS-Care Premium Plus', status: 'Active', medical: 'PPO',
   deductible: 750, fsaBalance: 240, nextAppointment: 'September 28, 2026'
@@ -44,7 +53,16 @@ export class MobileHealthComponent implements OnInit {
   protected readonly mbiError = signal('');
   protected readonly mbiPhotoStatus = signal('');
   protected readonly selectedMbiIndex = signal(0);
+  protected readonly enrollmentModal = signal<'none' | 'eligibility' | 'resume'>('none');
+  protected readonly dependentModal = signal<'none' | 'select' | 'new'>('none');
+  protected readonly enrollmentOpen = signal(false);
+  protected readonly enrollmentSaving = signal(false);
+  protected readonly enrollmentMessage = signal('');
+  protected readonly enrollmentError = signal('');
+  protected readonly enrollmentStep = signal(1);
   protected draftMbiRecords: MbiRecord[] = INITIAL_MBI.map(record => ({ ...record }));
+  protected enrollment: EnrollmentDraft | null = null;
+  protected newDependent: EnrollmentDependent = { id: '', name: '', relationship: 'Child', selected: true };
 
   ngOnInit(): void { this.load(); }
   protected refresh(): void { this.load(); }
@@ -70,9 +88,62 @@ export class MobileHealthComponent implements OnInit {
   }
 
   protected selectAction(action: string): void {
+    if (action.includes('Initial Enrollment')) { this.beginEnrollment(); return; }
     this.actionMessage.set(`${action} is ready for the next proof-of-concept step.`);
     if (action.includes('MBI')) document.getElementById('mobile-mbi-update')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
+
+  protected beginEnrollment(): void {
+    const token = window.__mobileAuth?.token;
+    if (!token) { this.enrollmentError.set('Your mobile session is no longer available.'); return; }
+    this.enrollmentError.set(''); this.enrollmentMessage.set('');
+    this.http.get<EnrollmentDraft | null>(`${API_BASE}/mobile-poc/wss-apps/health-ws/api/health/enrollment`, this.options(token)).subscribe({
+      next: draft => draft?.status === 'INCOMPLETE' ? (this.enrollment = { ...draft }, this.enrollmentStep.set(draft.currentStep || 1), this.enrollmentModal.set('resume')) : draft?.status === 'SUBMITTED' ? this.enrollmentMessage.set('This demo enrollment has already been submitted.') : this.createEnrollment(),
+      error: error => { this.logApiError('GET /enrollment', error); this.enrollmentError.set(this.loadError(error)); }
+    });
+  }
+
+  private createEnrollment(): void {
+    const token = window.__mobileAuth?.token; if (!token) return;
+    this.http.post<EnrollmentDraft>(`${API_BASE}/mobile-poc/wss-apps/health-ws/api/health/enrollment/start`, {}, this.options(token)).subscribe({
+      next: draft => { this.enrollment = { ...draft }; this.enrollmentStep.set(1); this.enrollmentModal.set('eligibility'); },
+      error: error => { this.logApiError('POST /enrollment/start', error); this.enrollmentError.set(this.updateError(error)); }
+    });
+  }
+
+  protected continueEnrollment(): void { this.enrollmentModal.set('none'); this.enrollmentOpen.set(true); }
+
+  protected chooseEligibility(decision: 'CONTINUE' | 'MEDICARE'): void {
+    if (!this.enrollment) return;
+    this.enrollment.eligibilityReviewed = true; this.enrollment.eligibilityDecision = decision;
+    if (decision === 'MEDICARE') { this.persistEnrollment(() => { this.enrollmentModal.set('none'); this.enrollmentMessage.set('Medicare-dependent enrollment would continue through a downloadable form in this demo.'); }); return; }
+    this.persistEnrollment(() => { this.enrollmentModal.set('none'); this.enrollmentOpen.set(true); });
+  }
+
+  protected closeEnrollment(): void { if (this.enrollment) this.persistEnrollment(() => { this.enrollmentOpen.set(false); this.enrollmentMessage.set('Enrollment draft saved.'); }); }
+  protected cancelEnrollment(): void { const token = window.__mobileAuth?.token; if (!token) return; this.http.delete<EnrollmentDraft>(`${API_BASE}/mobile-poc/wss-apps/health-ws/api/health/enrollment`, this.options(token)).subscribe({ next: draft => { this.enrollment = { ...draft }; this.enrollmentOpen.set(false); this.enrollmentModal.set('none'); this.enrollmentMessage.set('Enrollment draft cancelled.'); }, error: error => this.enrollmentError.set(this.updateError(error)) }); }
+  protected previousEnrollmentStep(): void { this.enrollmentStep.update(step => Math.max(1, step - 1)); }
+
+  protected nextEnrollmentStep(): void {
+    if (!this.enrollment) return;
+    const step = this.enrollmentStep();
+    if (step === 1 && !this.enrollment.legalAccepted) { this.enrollmentError.set('Accept the disclosure before continuing.'); return; }
+    if (step === 2 && !this.enrollment.demographicVerified) { this.enrollmentError.set('Confirm your information before continuing.'); return; }
+    if (step === 4 && (!this.enrollment.acknowledgmentAccepted || !this.enrollment.signature.trim())) { this.enrollmentError.set('Choose Yes and enter a signature before continuing.'); return; }
+    this.enrollmentError.set(''); this.enrollment.currentStep = Math.min(5, step + 1); this.enrollmentStep.set(this.enrollment.currentStep); this.persistEnrollment();
+  }
+
+  protected submitEnrollment(): void { const token = window.__mobileAuth?.token; if (!token) return; this.enrollmentSaving.set(true); this.http.post<EnrollmentDraft>(`${API_BASE}/mobile-poc/wss-apps/health-ws/api/health/enrollment/submit`, {}, this.options(token)).subscribe({ next: draft => { this.enrollment = { ...draft }; this.enrollmentSaving.set(false); this.enrollmentOpen.set(false); this.enrollmentMessage.set('Enrollment submitted for TRS review in this proof-of-concept.'); }, error: error => { this.enrollmentSaving.set(false); this.enrollmentError.set(this.updateError(error)); } }); }
+
+  protected openDependentModal(): void { this.dependentModal.set('select'); }
+  protected addExistingDependent(id: string): void { if (!this.enrollment) return; this.enrollment.dependents = this.enrollment.dependents.map(dependent => dependent.id === id ? { ...dependent, selected: true } : dependent); this.dependentModal.set('none'); this.persistEnrollment(); }
+  protected openNewDependent(): void { this.newDependent = { id: '', name: '', relationship: 'Child', selected: true }; this.dependentModal.set('new'); }
+  protected saveNewDependent(): void { if (!this.enrollment || !this.newDependent.name.trim()) return; this.enrollment.dependents = [...this.enrollment.dependents, { ...this.newDependent, id: `new-${Date.now()}`, name: this.newDependent.name.trim() }]; this.dependentModal.set('none'); this.persistEnrollment(); }
+  protected enrollmentPeople(): Array<{ name: string; relationship: string }> { return this.enrollment ? [{ name: this.enrollment.memberName, relationship: 'Policyholder' }, ...this.enrollment.dependents.filter(dependent => dependent.selected)] : []; }
+  protected premium(coverage: 'medicalCoverage' | 'dentalCoverage' | 'visionCoverage'): number { return this.enrollment?.[coverage] === 'Enroll' ? (coverage === 'medicalCoverage' ? this.enrollmentPeople().length * 200 : 0) : 0; }
+  protected totalPremium(): number { return this.premium('medicalCoverage') + this.premium('dentalCoverage') + this.premium('visionCoverage'); }
+
+  private persistEnrollment(done?: () => void): void { const token = window.__mobileAuth?.token; if (!token || !this.enrollment) { done?.(); return; } this.enrollmentSaving.set(true); this.http.put<EnrollmentDraft>(`${API_BASE}/mobile-poc/wss-apps/health-ws/api/health/enrollment`, this.enrollment, this.options(token)).subscribe({ next: draft => { this.enrollment = { ...draft }; this.enrollmentSaving.set(false); done?.(); }, error: error => { this.enrollmentSaving.set(false); this.enrollmentError.set(this.updateError(error)); } }); }
 
   protected selectMbiPerson(index: number): void {
     this.selectedMbiIndex.set(index); this.mbiPhotoStatus.set(''); this.mbiSaved.set(false);

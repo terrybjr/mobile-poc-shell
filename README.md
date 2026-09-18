@@ -36,6 +36,8 @@ The native MBI camera flow requires the iOS `NSCameraUsageDescription`, `NSPhoto
 
 The browser callback remains `https://brianthedeveloper.com/mobile-poc/wss-apps/`. The native Shell does not use a Keycloak redirect callback; it uses the public `health-portal` client with Direct Access Grants and the standard token endpoint. No client secret is embedded in the mobile bundle.
 
+The native Health tab also mirrors the web Initial Enrollment demo. It calls the Health enrollment draft endpoints with the Shell bearer token, presents the Medicare eligibility gate, saves/resumes the five-step flow, supports existing or newly added dependents, and shows mocked coverage premiums before submission. This is a mobile-optimized native view; it does not open the hosted Health MFE or legacy Pension pages.
+
 ## Secure login presentation
 
 The branded mobile login page is the app-owned entry point. The username and password fields call Keycloak's standard token endpoint through the public `health-portal` client with Direct Access Grants; the native app receives only tokens and clears the password field. Returning members can use the saved Keychain refresh token after Face ID or device-passcode authorization. The browser website continues to use its separate Keycloak redirect flow.
