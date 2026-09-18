@@ -985,6 +985,13 @@ button:disabled {
   gap: 11px;
 }
 
+.dependent-form input[type='date'] {
+  width: calc(100% - 18px);
+  max-width: calc(100% - 18px);
+  justify-self: start;
+  text-align: left;
+}
+
 .dependent-form .mobile-radio-group {
   margin-top: 2px;
 }
