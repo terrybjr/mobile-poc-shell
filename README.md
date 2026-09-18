@@ -42,7 +42,7 @@ The browser Shell keeps feature boundaries as routes: `/mobile-poc/wss-apps/myhe
 
 ## Secure login presentation
 
-The branded mobile login page is the app-owned entry point. The username and password fields call Keycloak's standard token endpoint through the public `health-portal` client with Direct Access Grants; the native app receives only tokens and clears the password field. Returning members can use the saved Keychain refresh token after Face ID or device-passcode authorization. The browser website continues to use its separate Keycloak redirect flow.
+The branded mobile login page is the app-owned entry point. The username and password fields call Keycloak's standard token endpoint through the public `health-portal` client with Direct Access Grants; the native app receives only tokens and clears the password field. Returning members can use the saved Keychain session after Face ID or device-passcode authorization. The refresh token is used whenever the identity service is reachable; if the device is offline, biometric unlock opens the last cached read-only member experience without treating an expired access token as valid for server changes. The browser website continues to use its separate Keycloak redirect flow.
 
 This is a POC use of Keycloak's legacy Direct Access Grant pipeline. It is intentionally limited to the native mobile product and should be replaced by a first-party authorization service or brokered native authentication flow if the product moves beyond the POC.
 

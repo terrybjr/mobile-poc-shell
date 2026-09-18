@@ -11,17 +11,32 @@
   </section>
 
   <section class="online-card" aria-label="Connection status">
-    <span class="online-dot" [class.offline]="!auth.online()"></span>
-    <div><strong>{{ auth.online() ? 'You are online' : 'You are offline' }}</strong><small>{{ auth.online() ? 'Your member information is up to date.' : 'Some information may be unavailable.' }}</small></div>
+    <span class="online-dot" [class.offline]="!auth.online() || auth.offlineMode()"></span>
+    <div><strong>{{ auth.online() && !auth.offlineMode() ? 'You are online' : 'Offline mode' }}</strong><small>{{ auth.online() && !auth.offlineMode() ? 'Your member information is up to date.' : 'You can view saved information, but changes are unavailable until your session reconnects.' }}</small></div>
     <span class="lock" aria-hidden="true">✓</span>
   </section>
 
+  @if (!auth.online() || auth.offlineMode()) {
+    <section class="offline-notice" role="status">
+      <strong>Offline mode</strong>
+      <span>Saved member information, your ID card, and cached documents remain available. Updates and submissions are disabled.</span>
+    </section>
+  }
+
   @if (activeTab() === 'overview') {
   <section class="member-card">
-    <div class="card-heading"><span>MYTRS MEMBER</span><span class="verified">✓ SECURE</span></div>
+    <div class="card-heading"><span>DIGITAL MEMBER ID</span><span class="verified">✓ SECURE</span></div>
     <h2>{{ pension().memberName }}</h2>
     <p>Teacher Retirement System</p>
     <div class="member-grid"><div><small>MEMBER STATUS</small><strong>{{ pension().status }}</strong></div><div><small>TRS PARTICIPANT ID</small><strong>{{ pension().memberId }}</strong></div></div>
+    <button type="button" class="id-card-toggle" (click)="toggleIdCard()">{{ showIdCard() ? 'Hide ID card details' : 'View ID card details' }}</button>
+    @if (showIdCard()) {
+      <div class="id-card-details">
+        <span><small>MEMBER</small><strong>{{ pension().memberName }}</strong></span>
+        <span><small>PARTICIPANT ID</small><strong>{{ pension().memberId }}</strong></span>
+        <span><small>STATUS</small><strong>{{ pension().status }}</strong></span>
+      </div>
+    }
   </section>
 
   <section class="hello-card" aria-labelledby="member-services-title">

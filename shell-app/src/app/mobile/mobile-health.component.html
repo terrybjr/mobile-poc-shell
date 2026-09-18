@@ -24,6 +24,10 @@
       <p class="feature-error" role="alert">{{ error() }}</p>
     }
 
+    @if (!auth.online() || auth.offlineMode()) {
+      <p class="offline-notice" role="status"><strong>Offline mode</strong><span>You can review saved coverage and Medicare information. Enrollment, MBI submissions, and other changes are disabled until you reconnect.</span></p>
+    }
+
     <section class="mobile-welcome" aria-labelledby="health-actions-title">
       <p class="mobile-eyebrow">MYTRS HEALTH</p>
       <h3 id="health-actions-title">Manage your TRS-Care benefits</h3>
@@ -35,7 +39,7 @@
         type="button"
         class="mobile-action-card mobile-action-primary"
         (click)="selectAction('TRS-Care Initial Enrollment')"
-        [disabled]="loading() || enrollmentLoading()"
+        [disabled]="loading() || enrollmentLoading() || !canMutate()"
         aria-describedby="enrollment-action-description"
       >
         <span>
@@ -51,7 +55,7 @@
         type="button"
         class="mobile-action-card"
         (click)="selectAction('Submit Medicare Beneficiary Identifier (MBI)')"
-        [disabled]="loading() || !draftMbiRecords.length"
+        [disabled]="loading() || !draftMbiRecords.length || !canMutate()"
         aria-describedby="mbi-action-description"
       >
         <span>
@@ -77,7 +81,7 @@
     <section class="mobile-coverage" aria-labelledby="mobile-coverage-title">
       <div class="mobile-section-label coverage-section-heading">
         <span id="mobile-coverage-title">CURRENT COVERAGE</span>
-        <button type="button" class="quiet-button" (click)="resetDemo()" [disabled]="busy()">
+        <button type="button" class="quiet-button" (click)="resetDemo()" [disabled]="busy() || !canMutate()">
           {{ busy() ? 'Restoring…' : 'Restore sample' }}
         </button>
       </div>
@@ -170,6 +174,7 @@
           novalidate
           [attr.aria-busy]="enrollmentSaving()"
         >
+          <fieldset class="mobile-offline-fieldset" [disabled]="!canMutate() || enrollmentSaving()">
           @if (enrollmentStep() === 1) {
             <section
               class="mobile-enrollment-card"
@@ -436,6 +441,7 @@
               {{ enrollmentStep() < enrollmentSteps.length ? 'Continue' : 'Submit enrollment' }}
             </button>
           </div>
+          </fieldset>
         </form>
       }
     </section>
@@ -459,6 +465,9 @@
 
       <section class="mobile-mbi" aria-labelledby="mobile-mbi-form-title">
         <div class="mobile-section-label">MBI UPDATE</div>
+        @if (!auth.online() || auth.offlineMode()) {
+          <p class="offline-notice" role="status"><strong>View only while offline</strong><span>Saved Medicare information can be reviewed, but updates and camera submissions are disabled until you reconnect.</span></p>
+        }
         <p id="mobile-mbi-form-title" class="mobile-mbi-intro">
           Select a person, enter the MBI twice, and review the dates before submitting.
         </p>
@@ -503,6 +512,7 @@
               autocomplete="off"
               novalidate
             >
+              <fieldset class="mobile-offline-fieldset" [disabled]="!canMutate() || mbiBusy()">
               <div class="mobile-field-group">
                 <label for="mobile-mbi-number">Medicare Beneficiary Identifier</label>
                 <span class="mobile-field-hint">11 characters, as shown on the Medicare card.</span>
@@ -586,6 +596,7 @@
                   {{ mbiBusy() ? 'Submitting…' : 'Submit update' }}
                 </button>
               </div>
+              </fieldset>
             </form>
           }
         } @else {

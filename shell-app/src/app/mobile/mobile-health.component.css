@@ -47,6 +47,22 @@
   line-height: 1.45;
 }
 
+.offline-notice {
+  display: grid;
+  gap: 4px;
+  margin: 12px 0 0;
+  padding: 12px 14px;
+  border: 1px solid #edbd6880;
+  border-radius: 12px;
+  color: #f6e0b2;
+  background: #7b572533;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.offline-notice strong { color: #ffd98c; font-size: 13px; }
+.mobile-offline-fieldset { min-inline-size: 0; margin: 0; padding: 0; border: 0; }
+
 button,
 input,
 select,

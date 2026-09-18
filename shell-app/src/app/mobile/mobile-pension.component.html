@@ -8,12 +8,16 @@
       type="button"
       class="quiet-button"
       (click)="refresh()"
-      [disabled]="loading() || busy()"
+      [disabled]="loading() || busy() || !canMutate()"
       [attr.aria-label]="loading() ? 'Loading Pension data' : 'Refresh Pension data'"
     >
       {{ loading() ? 'Loading…' : 'Refresh' }}
     </button>
   </div>
+
+  @if (!auth.online() || auth.offlineMode()) {
+    <p class="offline-notice" role="status"><strong>Offline mode</strong><span>You can view your saved pension information. Editing and restoring sample values are disabled until you reconnect.</span></p>
+  }
 
   @if (error()) {
     <p class="feature-error" role="alert">{{ error() }}</p>
@@ -29,7 +33,7 @@
   </section>
 
   <form class="feature-form" (ngSubmit)="save()" autocomplete="off" aria-label="Edit Pension sample information" [attr.aria-busy]="busy()">
-    <fieldset [disabled]="loading() || busy()">
+    <fieldset [disabled]="loading() || busy() || !canMutate()">
       <label for="pension-member-name">Member name</label>
       <input id="pension-member-name" name="memberName" [(ngModel)]="draft.memberName" autocomplete="name" required />
 
@@ -53,7 +57,7 @@
 
       <div class="feature-actions">
         <button class="primary-button" type="submit">{{ busy() ? 'Saving…' : 'Save Pension data' }}</button>
-        <button class="secondary-button" type="button" (click)="reset()">Restore sample values</button>
+        <button class="secondary-button" type="button" (click)="reset()" [disabled]="!canMutate()">Restore sample values</button>
       </div>
     </fieldset>
   </form>

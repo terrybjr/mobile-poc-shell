@@ -1,4 +1,5 @@
 import { Capacitor } from '@capacitor/core';
+import { App } from '@capacitor/app';
 import { BiometricAuth, BiometryType } from '@aparajita/capacitor-biometric-auth';
 import { KeychainAccess, SecureStorage } from '@aparajita/capacitor-secure-storage';
 import { Injectable, signal } from '@angular/core';
@@ -16,7 +17,11 @@ interface TokenResponse {
 interface StoredSession {
   refreshToken: string;
   memberName: string;
+  accessToken?: string;
+  tokenType?: string;
 }
+
+class NetworkAuthError extends Error {}
 
 const KEYCLOAK_BASE = 'https://brianthedeveloper.com';
 const REALM = 'trs-demo';
@@ -33,6 +38,9 @@ export class MobileAuthService {
   readonly biometricLabel = signal('Face ID');
   readonly memberName = signal('Jordan Davis');
   readonly online = signal(typeof navigator === 'undefined' ? true : navigator.onLine);
+  readonly offlineMode = signal(false);
+  readonly lockedForBackground = signal(false);
+  private biometricPromptActive = false;
 
   async initialize(): Promise<void> {
     if (!Capacitor.isNativePlatform()) {
@@ -40,8 +48,19 @@ export class MobileAuthService {
       return;
     }
 
-    window.addEventListener('online', () => this.online.set(true));
+    window.addEventListener('online', () => {
+      this.online.set(true);
+      if (this.authenticated() && this.offlineMode()) void this.revalidateOnlineSession();
+    });
     window.addEventListener('offline', () => this.online.set(false));
+
+    await App.addListener('appStateChange', ({ isActive }) => {
+      if (!isActive) {
+        this.lockForBackground();
+      } else if (this.lockedForBackground()) {
+        this.error.set('Unlock with biometrics to continue.');
+      }
+    });
 
     try {
       const biometry = await BiometricAuth.checkBiometry();
@@ -88,6 +107,7 @@ export class MobileAuthService {
       }
       await this.activateSession(tokens, this.claimMemberName(tokens.id_token), rememberDevice);
       if (rememberDevice && Capacitor.isNativePlatform()) {
+        this.biometricPromptActive = true;
         try {
           await BiometricAuth.authenticate({
             reason: 'Enable Face ID to unlock your saved MyTRS session',
@@ -96,6 +116,8 @@ export class MobileAuthService {
           });
         } catch {
           // The session remains active; biometric unlock can be enabled later.
+        } finally {
+          this.biometricPromptActive = false;
         }
       }
     } catch (error) {
@@ -109,18 +131,39 @@ export class MobileAuthService {
     this.error.set('');
     this.busy.set(true);
     try {
-      await BiometricAuth.authenticate({
-        reason: 'Unlock your secure MyTRS mobile session',
-        allowDeviceCredential: true,
-        iosFallbackTitle: 'Use device passcode'
-      });
+      this.biometricPromptActive = true;
+      try {
+        await BiometricAuth.authenticate({
+          reason: 'Unlock your secure MyTRS mobile session',
+          allowDeviceCredential: true,
+          iosFallbackTitle: 'Use device passcode'
+        });
+      } finally {
+        this.biometricPromptActive = false;
+      }
       const saved = await this.readStoredSession();
       if (!saved) {
         this.hasSavedSession.set(false);
         throw new Error('No saved session is available.');
       }
-      const tokens = await this.exchangeRefreshToken(saved.refreshToken);
-      await this.activateSession(tokens, saved.memberName, true);
+      if (!this.online()) {
+        await this.activateStoredSession(saved);
+        return;
+      }
+
+      try {
+        const tokens = await this.exchangeRefreshToken(saved.refreshToken);
+        await this.activateSession(tokens, saved.memberName, true);
+      } catch (error) {
+        // A temporary network outage must not turn a valid local biometric
+        // unlock into a forced credential login. An invalid/revoked refresh
+        // token still requires a fresh sign-in.
+        if (error instanceof NetworkAuthError && saved.accessToken) {
+          await this.activateStoredSession(saved);
+          return;
+        }
+        throw error;
+      }
     } catch {
       this.error.set('Unlock was cancelled or the saved session has expired. Sign in again.');
       this.busy.set(false);
@@ -132,17 +175,24 @@ export class MobileAuthService {
     // token so the user can return through biometric unlock.
     this.hasSavedSession.set((await this.readStoredSession()) !== null);
     this.authenticated.set(false);
+    this.offlineMode.set(false);
+    this.lockedForBackground.set(false);
     delete window.__mobileAuth;
     delete window.__healthAuth;
     this.error.set('');
   }
 
   private async exchangeRefreshToken(refreshToken: string): Promise<TokenResponse> {
-    const response = await fetch(`${KEYCLOAK_BASE}/realms/${REALM}/protocol/openid-connect/token`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ grant_type: 'refresh_token', client_id: CLIENT_ID, refresh_token: refreshToken })
-    });
+    let response: Response;
+    try {
+      response = await fetch(`${KEYCLOAK_BASE}/realms/${REALM}/protocol/openid-connect/token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ grant_type: 'refresh_token', client_id: CLIENT_ID, refresh_token: refreshToken })
+      });
+    } catch {
+      throw new NetworkAuthError('Refresh could not reach the identity provider.');
+    }
     if (!response.ok) {
       throw new Error('Refresh failed.');
     }
@@ -155,13 +205,18 @@ export class MobileAuthService {
     }
     const name = this.claimMemberName(tokens.id_token) || fallbackName || 'Jordan Davis';
     this.memberName.set(name);
-    const snapshot = { authenticated: true, token: tokens.access_token, tokenType: tokens.token_type ?? 'Bearer', expiresIn: tokens.expires_in ?? 0 };
+    const snapshot = { authenticated: true, token: tokens.access_token, tokenType: tokens.token_type ?? 'Bearer', expiresIn: tokens.expires_in ?? 0, offline: false };
     window.__mobileAuth = snapshot;
     window.__healthAuth = { authenticated: true, token: tokens.access_token };
     window.dispatchEvent(new Event('health-auth-ready'));
 
     if (save && tokens.refresh_token) {
-      const session: StoredSession = { refreshToken: tokens.refresh_token, memberName: name };
+      const session: StoredSession = {
+        refreshToken: tokens.refresh_token,
+        memberName: name,
+        accessToken: tokens.access_token,
+        tokenType: tokens.token_type ?? 'Bearer'
+      };
       await SecureStorage.set(
         SESSION_KEY,
         JSON.stringify(session),
@@ -174,8 +229,50 @@ export class MobileAuthService {
       await SecureStorage.remove(SESSION_KEY).catch(() => false);
       this.hasSavedSession.set(false);
     }
+    this.offlineMode.set(false);
+    this.lockedForBackground.set(false);
     this.authenticated.set(true);
     this.busy.set(false);
+  }
+
+  private async activateStoredSession(saved: StoredSession): Promise<void> {
+    const name = saved.memberName || 'Jordan Davis';
+    this.memberName.set(name);
+    window.__mobileAuth = {
+      authenticated: true,
+      token: saved.accessToken ?? '',
+      tokenType: saved.tokenType ?? 'Bearer',
+      expiresIn: 0,
+      offline: true
+    };
+    window.__healthAuth = { authenticated: true, token: saved.accessToken ?? '' };
+    window.dispatchEvent(new Event('health-auth-ready'));
+    this.offlineMode.set(true);
+    this.lockedForBackground.set(false);
+    this.authenticated.set(true);
+    this.busy.set(false);
+  }
+
+  private async revalidateOnlineSession(): Promise<void> {
+    const saved = await this.readStoredSession();
+    if (!saved) return;
+    try {
+      const tokens = await this.exchangeRefreshToken(saved.refreshToken);
+      await this.activateSession(tokens, saved.memberName, true);
+    } catch {
+      // Keep the read-only offline session until the member explicitly signs
+      // in again; an intermittent reconnect must not discard cached access.
+    }
+  }
+
+  private lockForBackground(): void {
+    if (!Capacitor.isNativePlatform() || this.biometricPromptActive || !this.authenticated()) return;
+
+    this.authenticated.set(false);
+    this.offlineMode.set(false);
+    this.lockedForBackground.set(true);
+    delete window.__mobileAuth;
+    delete window.__healthAuth;
   }
 
   private async readStoredSession(): Promise<StoredSession | null> {

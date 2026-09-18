@@ -101,6 +101,22 @@
   background: #ffffff0e;
 }
 
+.offline-notice {
+  display: grid;
+  gap: 4px;
+  max-width: 520px;
+  margin: 12px auto 0;
+  padding: 12px 14px;
+  border: 1px solid #edbd6880;
+  border-radius: 12px;
+  color: #f6e0b2;
+  background: #7b572533;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.offline-notice strong { color: #ffd98c; font-size: 13px; }
+
 .online-card > div {
   min-width: 0;
 }
@@ -204,6 +220,31 @@
   margin-top: 5px;
   font-size: 13px;
 }
+
+.id-card-toggle {
+  width: 100%;
+  margin-top: 18px;
+  padding: 11px 12px;
+  border: 1px solid #0a34564d;
+  border-radius: 10px;
+  color: #0a3456;
+  background: #ffffff99;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.id-card-details {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #0a34561c;
+}
+
+.id-card-details span { display: grid; gap: 3px; }
+.id-card-details small { color: #628397; font-size: 9px; letter-spacing: .8px; }
+.id-card-details strong { font-size: 13px; }
 
 .hello-card {
   margin-top: 17px;

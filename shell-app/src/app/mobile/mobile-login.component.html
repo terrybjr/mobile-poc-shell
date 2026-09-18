@@ -39,6 +39,9 @@
     @if (auth.busy()) {
       <p class="status" role="status">Signing in to MyTRS…</p>
     }
+    @if (!auth.online() && auth.hasSavedSession()) {
+      <p class="offline-login-note" role="status">You are offline. Biometric unlock can still open saved information; updates will be available when you reconnect.</p>
+    }
     @if (auth.error()) {
       <p class="error" role="alert">{{ auth.error() }}</p>
     }

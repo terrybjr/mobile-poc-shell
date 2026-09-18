@@ -1,6 +1,8 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { MobileAuthService } from './mobile-auth.service';
+import { MobileOfflineCacheService } from './mobile-offline-cache.service';
 
 interface PensionSummary {
   memberName: string;
@@ -36,6 +38,8 @@ const API_BASE = 'https://brianthedeveloper.com';
 })
 export class MobilePensionComponent implements OnInit {
   private readonly http = inject(HttpClient);
+  protected readonly auth = inject(MobileAuthService);
+  private readonly cache = inject(MobileOfflineCacheService);
   protected readonly loading = signal(true);
   protected readonly busy = signal(false);
   protected readonly saved = signal(false);
@@ -45,9 +49,12 @@ export class MobilePensionComponent implements OnInit {
 
   ngOnInit(): void { this.load(); }
 
-  protected refresh(): void { this.load(); }
+  protected refresh(): void { if (this.auth.online() && !this.auth.offlineMode()) this.load(); }
+
+  protected canMutate(): boolean { return this.auth.online() && !this.auth.offlineMode(); }
 
   protected save(): void {
+    if (!this.canMutate()) { this.error.set('You are offline. Pension changes are disabled until you reconnect.'); return; }
     const token = window.__mobileAuth?.token;
     if (!token) { this.error.set('Your mobile session is no longer available.'); return; }
     this.busy.set(true); this.saved.set(false); this.error.set('');
@@ -58,6 +65,7 @@ export class MobilePensionComponent implements OnInit {
   }
 
   protected reset(): void {
+    if (!this.canMutate()) { this.error.set('You are offline. Restoring sample values is disabled until you reconnect.'); return; }
     const token = window.__mobileAuth?.token;
     if (!token) { this.error.set('Your mobile session is no longer available.'); return; }
     this.busy.set(true); this.saved.set(false); this.error.set('');
@@ -68,11 +76,21 @@ export class MobilePensionComponent implements OnInit {
   }
 
   private load(): void {
+    void this.loadCachedThenRefresh();
+  }
+
+  private async loadCachedThenRefresh(): Promise<void> {
+    const cached = await this.cache.read<PensionSummary>('pension');
+    if (cached) this.apply(cached);
+
     const token = window.__mobileAuth?.token;
     this.loading.set(true); this.error.set('');
-    if (!token) { this.error.set('Your mobile session is no longer available.'); this.loading.set(false); return; }
+    if (!token || !this.auth.online() || this.auth.offlineMode()) {
+      if (!cached) this.error.set('Offline. Pension information has not been cached on this device yet.');
+      this.loading.set(false); return;
+    }
     this.http.get<PensionSummary>(`${API_BASE}/pension/api/pension`, this.options(token)).subscribe({
-      next: data => { this.apply(data); this.loading.set(false); },
+      next: data => { this.apply(data); void this.cache.write('pension', data); this.loading.set(false); },
       error: error => { this.logApiError('GET', error); this.error.set(this.apiError(error, 'loaded')); this.loading.set(false); }
     });
   }

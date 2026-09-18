@@ -5,6 +5,8 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CapacitorPluginMlKitTextRecognition } from '@pantrist/capacitor-plugin-ml-kit-text-recognition';
 import { MobileVisionTextRecognition } from './mobile-vision-text-recognition';
+import { MobileAuthService } from './mobile-auth.service';
+import { MobileOfflineCacheService } from './mobile-offline-cache.service';
 
 interface HealthSummary {
   memberName: string;
@@ -124,6 +126,8 @@ const API_BASE = 'https://brianthedeveloper.com';
 })
 export class MobileHealthComponent implements OnInit {
   private readonly http = inject(HttpClient);
+  protected readonly auth = inject(MobileAuthService);
+  private readonly cache = inject(MobileOfflineCacheService);
 
   protected readonly enrollmentSteps = ['Disclosure', 'Verify', 'Plans', 'Accept', 'Submit'];
   protected readonly coverageOptions: CoverageOption[] = [
@@ -164,11 +168,19 @@ export class MobileHealthComponent implements OnInit {
     this.load();
   }
 
+  protected canMutate(): boolean {
+    return this.auth.online() && !this.auth.offlineMode();
+  }
+
   protected refresh(): void {
     this.load();
   }
 
   protected resetDemo(): void {
+    if (!this.canMutate()) {
+      this.error.set('You are offline. Restoring sample coverage is disabled until you reconnect.');
+      return;
+    }
     const token = window.__mobileAuth?.token;
     if (!token) {
       this.error.set('Your mobile session is no longer available.');
@@ -245,6 +257,10 @@ export class MobileHealthComponent implements OnInit {
   }
 
   protected selectAction(action: string): void {
+    if (!this.canMutate()) {
+      this.actionMessage.set('You are offline. Updates and submissions are disabled until you reconnect.');
+      return;
+    }
     if (action.includes('Initial Enrollment')) {
       this.beginEnrollment();
       return;
@@ -260,6 +276,10 @@ export class MobileHealthComponent implements OnInit {
   }
 
   protected beginEnrollment(): void {
+    if (!this.canMutate()) {
+      this.enrollmentError.set('You are offline. Enrollment changes are disabled until you reconnect.');
+      return;
+    }
     const token = window.__mobileAuth?.token;
     if (!token) {
       this.enrollmentError.set('Your mobile session is no longer available.');
@@ -532,6 +552,10 @@ export class MobileHealthComponent implements OnInit {
   }
 
   protected submitEnrollment(): void {
+    if (!this.canMutate()) {
+      this.enrollmentError.set('You are offline. Enrollment submission is disabled until you reconnect.');
+      return;
+    }
     const token = window.__mobileAuth?.token;
     if (!token || !this.enrollment || this.enrollmentSaving()) return;
 
@@ -579,6 +603,7 @@ export class MobileHealthComponent implements OnInit {
   }
 
   protected openDependentModal(): void {
+    if (!this.canMutate()) return;
     this.dependentModal.set('select');
   }
 
@@ -602,6 +627,7 @@ export class MobileHealthComponent implements OnInit {
   }
 
   protected saveNewDependent(): void {
+    if (!this.canMutate()) return;
     if (!this.enrollment) return;
 
     const firstName = this.newDependent.firstName.trim();
@@ -714,6 +740,10 @@ export class MobileHealthComponent implements OnInit {
   }
 
   protected submitMbi(): void {
+    if (!this.canMutate()) {
+      this.mbiError.set('You are offline. Medicare updates are disabled until you reconnect.');
+      return;
+    }
     const token = window.__mobileAuth?.token;
     if (!token) {
       this.mbiError.set('Your mobile session is no longer available.');
@@ -772,6 +802,10 @@ export class MobileHealthComponent implements OnInit {
   }
 
   protected async takeMbiPhoto(): Promise<void> {
+    if (!this.canMutate()) {
+      this.mbiError.set('You are offline. Medicare updates are disabled until you reconnect.');
+      return;
+    }
     if (!Capacitor.isNativePlatform()) {
       this.mbiError.set('Camera OCR is available in the installed mobile Shell.');
       return;
@@ -896,12 +930,25 @@ export class MobileHealthComponent implements OnInit {
   }
 
   private load(): void {
+    void this.loadCachedThenRefresh();
+  }
+
+  private async loadCachedThenRefresh(): Promise<void> {
+    const [cachedHealth, cachedMbi, cachedEnrollment] = await Promise.all([
+      this.cache.read<HealthSummary>('health'),
+      this.cache.read<MbiRecord[]>('health-mbi'),
+      this.cache.read<EnrollmentDraft | null>('health-enrollment'),
+    ]);
+    if (cachedHealth) this.apply(cachedHealth);
+    if (cachedMbi) this.draftMbiRecords = cachedMbi.map((record) => ({ ...record }));
+    if (cachedEnrollment) this.enrollment = { ...cachedEnrollment };
+
     const token = window.__mobileAuth?.token;
     this.loading.set(true);
     this.error.set('');
 
-    if (!token) {
-      this.error.set('Your mobile session is no longer available.');
+    if (!token || !this.auth.online() || this.auth.offlineMode()) {
+      if (!cachedHealth) this.error.set('Offline. Health information has not been cached on this device yet.');
       this.loading.set(false);
       return;
     }
@@ -916,6 +963,7 @@ export class MobileHealthComponent implements OnInit {
       .subscribe({
         next: (data) => {
           this.apply(data);
+          void this.cache.write('health', data);
           this.loading.set(false);
         },
         error: (error) => {
@@ -934,6 +982,7 @@ export class MobileHealthComponent implements OnInit {
       .subscribe({
         next: (data) => {
           this.draftMbiRecords = data.map((record) => ({ ...record }));
+          void this.cache.write('health-mbi', this.draftMbiRecords);
           this.selectedMbiIndex.set(
             Math.min(this.selectedMbiIndex(), Math.max(this.draftMbiRecords.length - 1, 0)),
           );
@@ -954,6 +1003,7 @@ export class MobileHealthComponent implements OnInit {
       .subscribe({
         next: (draft) => {
           this.enrollment = draft ? { ...draft } : null;
+          void this.cache.write('health-enrollment', this.enrollment);
         },
         error: () => {
           this.enrollment = null;
@@ -963,6 +1013,7 @@ export class MobileHealthComponent implements OnInit {
 
   private apply(data: HealthSummary): void {
     this.member.set(data);
+    void this.cache.write('health', data);
   }
   private options(token: string): { headers: { Authorization: string } } {
     return { headers: { Authorization: `Bearer ${token}` } };

@@ -11,6 +11,7 @@ h1 { margin: 0; font-size: clamp(34px, 10vw, 48px); line-height: 1.02; letter-sp
 .remember-option { display: flex; align-items: flex-start; gap: 10px; margin: 22px 3px 0; color: #b8cedc; font-size: 12px; line-height: 1.4; }.remember-option input { width: 17px; height: 17px; accent-color: #86c3a0; margin: 0; }.status, .error { border-radius: 10px; padding: 11px 13px; margin: 17px 0 0; font-size: 13px; }.status { background: #ffffff10; color: #c1d3df; }.error { background: #8e303055; color: #ffd6d6; }.security-note { max-width: 420px; margin: 0 auto 18px; color: #9eb8c8; font-size: 11px; line-height: 1.5; text-align: center; }.security-note span { color: #86c3a0; margin-right: 5px; }.mobile-shell footer { margin-top: 0; color: #7899ad; font-size: 10px; text-align: center; }
 :host input[type='text'], :host input[type='password'] { font-size: 16px; }
 .login-shell { overflow-x: hidden; overscroll-behavior-x: none; }
+.offline-login-note { border: 1px solid #edbd6880; border-radius: 10px; padding: 11px 13px; margin: 17px 0 0; color: #f6e0b2; background: #7b572533; font-size: 12px; line-height: 1.4; }
 .credentials input { min-height: 48px; -webkit-appearance: none; }
 .primary-action { min-height: 56px; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
 .remember-option { min-height: 44px; align-items: center; }
