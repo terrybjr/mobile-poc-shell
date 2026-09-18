@@ -444,13 +444,16 @@ button:disabled {
   background: #ffffff09;
 }
 
-.mobile-enrollment-card legend {
-  width: 100%;
-  margin-bottom: 1px;
-  padding: 0;
+.mobile-enrollment-card-title {
+  margin: -16px -16px 2px;
+  padding: 13px 16px 12px;
+  border-bottom: 1px solid #ffffff24;
+  border-radius: 15px 15px 0 0;
+  background: #ffffff08;
   color: #f4f8fb;
   font-size: 17px;
   font-weight: 800;
+  line-height: 1.2;
 }
 
 .mobile-enrollment-card > label,

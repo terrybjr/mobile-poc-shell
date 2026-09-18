@@ -168,8 +168,13 @@
           [attr.aria-busy]="enrollmentSaving()"
         >
           @if (enrollmentStep() === 1) {
-            <fieldset class="mobile-enrollment-card">
-              <legend>Disclosure and consent</legend>
+            <section
+              class="mobile-enrollment-card"
+              aria-labelledby="mobile-enrollment-disclosure-title"
+            >
+              <h3 id="mobile-enrollment-disclosure-title" class="mobile-enrollment-card-title">
+                Disclosure and consent
+              </h3>
               <div class="mobile-legal" tabindex="0">
                 <p>
                   This application allows an eligible retiree to enroll in TRS-Care medical and
@@ -191,12 +196,17 @@
                 />
                 <span>I have read and understand the disclosure.</span>
               </label>
-            </fieldset>
+            </section>
           }
 
           @if (enrollmentStep() === 2) {
-            <fieldset class="mobile-enrollment-card">
-              <legend>Verify your information</legend>
+            <section
+              class="mobile-enrollment-card"
+              aria-labelledby="mobile-enrollment-verify-title"
+            >
+              <h3 id="mobile-enrollment-verify-title" class="mobile-enrollment-card-title">
+                Verify your information
+              </h3>
               <p class="mobile-muted">
                 Review the information on file. Corrections would continue through Account
                 Management.
@@ -231,12 +241,14 @@
                 />
                 <span>My information is correct.</span>
               </label>
-            </fieldset>
+            </section>
           }
 
           @if (enrollmentStep() === 3) {
-            <fieldset class="mobile-enrollment-card">
-              <legend>Choose your plans</legend>
+            <section class="mobile-enrollment-card" aria-labelledby="mobile-enrollment-plans-title">
+              <h3 id="mobile-enrollment-plans-title" class="mobile-enrollment-card-title">
+                Choose your plans
+              </h3>
               <label for="mobile-effective-date">
                 Effective date
                 <select
@@ -286,12 +298,17 @@
                   }
                 </div>
               }
-            </fieldset>
+            </section>
           }
 
           @if (enrollmentStep() === 4) {
-            <fieldset class="mobile-enrollment-card">
-              <legend>Acknowledgment and acceptance</legend>
+            <section
+              class="mobile-enrollment-card"
+              aria-labelledby="mobile-enrollment-acceptance-title"
+            >
+              <h3 id="mobile-enrollment-acceptance-title" class="mobile-enrollment-card-title">
+                Acknowledgment and acceptance
+              </h3>
               <div class="mobile-legal compact-legal">
                 <p>
                   I acknowledge that the information is true and complete. I authorize TRS to
@@ -333,12 +350,17 @@
                   required
                 />
               </label>
-            </fieldset>
+            </section>
           }
 
           @if (enrollmentStep() === 5) {
-            <fieldset class="mobile-enrollment-card">
-              <legend>Review and submit</legend>
+            <section
+              class="mobile-enrollment-card"
+              aria-labelledby="mobile-enrollment-review-title"
+            >
+              <h3 id="mobile-enrollment-review-title" class="mobile-enrollment-card-title">
+                Review and submit
+              </h3>
               <p class="mobile-muted">
                 Review your selections. You cannot edit this application after submission.
               </p>
@@ -380,7 +402,7 @@
                 />
                 <span>I accept these selections and premiums.</span>
               </label>
-            </fieldset>
+            </section>
           }
 
           @if (enrollmentSaving()) {
