@@ -25,6 +25,7 @@ export class App implements OnInit {
   // Capacitor origin should render the dedicated native experience.
   protected readonly mobileMode = Capacitor.isNativePlatform()
     && (window.location.protocol === 'capacitor:' || window.location.hostname === 'localhost');
+  protected readonly embeddedHostedMode = Capacitor.isNativePlatform() && !this.mobileMode;
   protected readonly mobileAuth = inject(MobileAuthService);
 
   private readonly keycloak = new Keycloak({
@@ -44,20 +45,33 @@ export class App implements OnInit {
     }
 
     try {
+      const redirectUri = `${window.location.origin}/mobile-poc/wss-apps/`;
       const authenticated = await this.keycloak.init({
-        onLoad: 'login-required',
+        // A hosted Shell inside the Pension WebView must follow the same OIDC
+        // flow as the browser. Check for the existing SSO session first, then
+        // explicitly enter Keycloak when the WebView has no session yet.
+        onLoad: this.embeddedHostedMode ? 'check-sso' : 'login-required',
         checkLoginIframe: false,
-        redirectUri: `${window.location.origin}/mobile-poc/wss-apps/`
+        redirectUri
       });
       if (!authenticated) {
-        this.error.set('Unable to establish a Health session.');
+        await this.keycloak.login({ redirectUri });
         return;
       }
 
       window.__healthAuth = { authenticated: true, token: this.keycloak.token ?? '' };
       window.dispatchEvent(new Event('health-auth-ready'));
       this.authReady.set(true);
-    } catch {
+    } catch (error) {
+      console.error('[Health Shell] browser sign-in failed', error);
+      if (this.embeddedHostedMode) {
+        try {
+          await this.keycloak.login({ redirectUri: `${window.location.origin}/mobile-poc/wss-apps/` });
+          return;
+        } catch {
+          // Fall through to the same visible error used by the browser build.
+        }
+      }
       this.error.set('Unable to sign in to the Health application.');
     }
   }
