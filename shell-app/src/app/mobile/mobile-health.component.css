@@ -161,7 +161,7 @@ button:disabled {
 .mobile-action-card {
   position: relative;
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 10px;
   min-width: 0;
@@ -193,7 +193,7 @@ button:disabled {
   background: linear-gradient(145deg, #1d5176, #153f60);
 }
 
-.mobile-action-card > span:nth-child(2) {
+.mobile-action-card > span:first-child {
   display: grid;
   gap: 6px;
   min-width: 0;
