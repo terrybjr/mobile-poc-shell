@@ -1,0 +1,1 @@
+(self.webpackChunkshell_app=self.webpackChunkshell_app||[]).push([[890],{890(n,t,e){e.d(t,{CapacitorPluginMlKitTextRecognitionWeb:()=>l});var i=e(4283);class l extends i.WebPlugin{detectText(a){return Promise.reject("Web Plugin Not implemented")}}}}]);

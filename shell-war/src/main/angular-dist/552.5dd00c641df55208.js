@@ -1,0 +1,1 @@
+(self.webpackChunkshell_app=self.webpackChunkshell_app||[]).push([[552],{8552(a,t,n){n.r(t),n.d(t,{CapacitorPluginMlKitTextRecognition:()=>l});const l=(0,n(4283).registerPlugin)("CapacitorPluginMlKitTextRecognition",{web:()=>n.e(890).then(n.bind(n,890)).then(o=>new o.CapacitorPluginMlKitTextRecognitionWeb)})}}]);

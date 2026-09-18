@@ -14,6 +14,47 @@
     <p class="feature-error" role="alert">{{ error() }}</p>
   }
 
+  <section class="mobile-welcome" aria-label="Health actions introduction">
+    <p class="mobile-eyebrow">MYTRS HEALTH</p>
+    <strong>Manage your TRS-Care benefits</strong>
+    <span>Select an action below to continue.</span>
+  </section>
+
+  <section class="mobile-action-grid" aria-label="Health policy actions">
+    <button type="button" class="mobile-action-card mobile-action-primary" (click)="selectAction('TRS-Care Initial Enrollment')"><span class="mobile-action-icon" aria-hidden="true">♥</span><span><strong>Initial enrollment</strong><small>Enroll in Medical, Dental and/or Vision coverage</small></span></button>
+    <button type="button" class="mobile-action-card" (click)="selectAction('Submit Medicare Beneficiary Identifier (MBI)')"><span class="mobile-action-icon" aria-hidden="true">▣</span><span><strong>Submit MBI</strong><small>Submit your Medicare Beneficiary Identifier to TRS.</small></span></button>
+  </section>
+  @if (actionMessage()) {
+    <p class="feature-success" role="status">{{ actionMessage() }}</p>
+  }
+
+  <section class="mobile-coverage" aria-labelledby="mobile-coverage-title">
+    <div class="mobile-section-label" id="mobile-coverage-title">CURRENT COVERAGE</div>
+    <div class="mobile-coverage-empty"><strong>No coverage on file</strong><span>This proof-of-concept has no current TRS-Care coverage record.</span></div>
+  </section>
+
+  <section class="mobile-mbi" id="mobile-mbi-update" aria-labelledby="mobile-mbi-title">
+    <div class="mobile-section-label" id="mobile-mbi-title">MEDICARE BENEFICIARY IDENTIFIER</div>
+    <p class="mobile-mbi-intro">Select a person, enter the MBI twice, and submit it for verification.</p>
+    @if (mbiError()) { <p class="feature-error" role="alert">{{ mbiError() }}</p> }
+    @if (mbiPhotoStatus()) { <p class="feature-success" role="status">{{ mbiPhotoStatus() }}</p> }
+    <div class="mobile-mbi-people" role="tablist" aria-label="Select person for MBI update">
+      @for (record of draftMbiRecords; track record.relationship; let index = $index) {
+        <button type="button" role="tab" [attr.aria-selected]="selectedMbiIndex() === index" [class.selected]="selectedMbiIndex() === index" (click)="selectMbiPerson(index)">{{ record.name }}<small>{{ record.relationship }}</small></button>
+      }
+    </div>
+    @if (draftMbiRecords[selectedMbiIndex()]; as selectedMbi) {
+      <div class="mobile-mbi-form">
+        <label for="mobile-mbi-number">Medicare Number</label><input id="mobile-mbi-number" name="mobileMbiNumber" [(ngModel)]="selectedMbi.medicareNumber" autocomplete="off" inputmode="text" placeholder="Enter MBI" />
+        <label for="mobile-mbi-reentry">Re-enter Medicare Number</label><input id="mobile-mbi-reentry" name="mobileMbiReentry" [(ngModel)]="selectedMbi.reentryMedicareNumber" autocomplete="off" inputmode="text" placeholder="Re-enter MBI" />
+        <div class="mobile-mbi-date-grid"><label for="mobile-mbi-part-a">Part A start<input id="mobile-mbi-part-a" name="mobileMbiPartA" type="date" [(ngModel)]="selectedMbi.partAStartDate" /></label><label for="mobile-mbi-part-b">Part B start<input id="mobile-mbi-part-b" name="mobileMbiPartB" type="date" [(ngModel)]="selectedMbi.partBStartDate" /></label></div>
+        <button type="button" class="camera-button" (click)="takeMbiPhoto()" [disabled]="mbiBusy()"><span aria-hidden="true">⌾</span> Take photo and read card</button>
+      </div>
+    }
+    <div class="mobile-mbi-actions"><button type="button" class="secondary-button" (click)="cancelMbi()" [disabled]="mbiBusy()">Cancel</button><button type="button" class="primary-button" (click)="submitMbi()" [disabled]="mbiBusy() || !canSubmitMbi()">{{ mbiBusy() ? 'Submitting…' : 'Submit' }}</button></div>
+    @if (mbiSaved()) { <p class="feature-success" role="status">Medicare information submitted.</p> }
+  </section>
+
   <section class="feature-card" aria-labelledby="health-card-title">
     <div id="health-card-title" class="feature-card-title">MYTRS HEALTH</div>
     <div class="feature-summary">
