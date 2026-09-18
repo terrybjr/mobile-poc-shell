@@ -148,14 +148,14 @@
           @for (label of enrollmentSteps; track label; let index = $index) {
             <li
               [class.current]="enrollmentStep() === index + 1"
-              [class.complete]="enrollmentStep() > index + 1"
+              [class.complete]="isEnrollmentStepComplete(index + 1)"
               [attr.aria-current]="enrollmentStep() === index + 1 ? 'step' : null"
             >
               <button
                 type="button"
                 class="stepper-step"
-                [disabled]="index + 1 >= enrollmentStep() || enrollmentSaving()"
-                [attr.aria-label]="index + 1 < enrollmentStep() ? 'Go to ' + label : label"
+                [disabled]="!canNavigateToEnrollmentStep(index + 1)"
+                [attr.aria-label]="canNavigateToEnrollmentStep(index + 1) ? 'Go to ' + label : label"
                 (click)="goToEnrollmentStep(index + 1)"
               >
                 <span class="step-number">{{ index + 1 }}</span>

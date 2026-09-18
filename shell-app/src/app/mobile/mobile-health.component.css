@@ -919,12 +919,11 @@ button:disabled {
   width: 100%;
   min-width: 0;
   overflow-x: hidden;
-  overflow-y: auto;
+  overflow-y: hidden;
   padding: calc(16px + env(safe-area-inset-top, 0px)) calc(16px + env(safe-area-inset-right, 0px))
     calc(16px + env(safe-area-inset-bottom, 0px)) calc(16px + env(safe-area-inset-left, 0px));
   background: #031a2dd9;
-  overscroll-behavior: contain;
-  overscroll-behavior-x: none;
+  overscroll-behavior: none;
   touch-action: pan-y;
 }
 
@@ -944,7 +943,8 @@ button:disabled {
   color: #eaf3f7;
   background: #0d4165;
   box-shadow: 0 18px 60px #0008;
-  overscroll-behavior-x: none;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
   -webkit-overflow-scrolling: touch;
 }
 

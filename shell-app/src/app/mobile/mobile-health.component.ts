@@ -153,6 +153,7 @@ export class MobileHealthComponent implements OnInit {
   protected readonly enrollmentMessage = signal('');
   protected readonly enrollmentError = signal('');
   protected readonly enrollmentStep = signal(1);
+  protected readonly highestCompletedEnrollmentStep = signal(0);
   protected readonly activePage = signal<'home' | 'mbi' | 'enrollment'>('home');
   protected draftMbiRecords: MbiRecord[] = INITIAL_MBI.map((record) => ({ ...record }));
   protected enrollment: EnrollmentDraft | null = null;
@@ -281,7 +282,7 @@ export class MobileHealthComponent implements OnInit {
 
           if (draft?.status === 'INCOMPLETE') {
             this.enrollment = { ...draft };
-            this.enrollmentStep.set(draft.currentStep || 1);
+            this.restoreEnrollmentProgress(draft.currentStep || 1);
             this.enrollmentModal.set('resume');
             return;
           }
@@ -314,7 +315,7 @@ export class MobileHealthComponent implements OnInit {
       .subscribe({
         next: (draft) => {
           this.enrollment = { ...draft };
-          this.enrollmentStep.set(1);
+          this.restoreEnrollmentProgress(1);
           this.enrollmentModal.set('eligibility');
         },
         error: (error) => {
@@ -413,8 +414,41 @@ export class MobileHealthComponent implements OnInit {
     this.enrollmentStep.update((step) => Math.max(1, step - 1));
   }
 
+  protected canNavigateToEnrollmentStep(step: number): boolean {
+    const currentStep = this.enrollmentStep();
+    if (
+      !this.enrollment ||
+      this.enrollmentSaving() ||
+      step < 1 ||
+      step > this.enrollmentSteps.length
+    ) {
+      return false;
+    }
+
+    const highestCompletedStep = this.highestCompletedEnrollmentStep();
+    if (step <= highestCompletedStep) {
+      return this.areEnrollmentStepsValidThrough(step);
+    }
+
+    return step === currentStep + 1 && this.areEnrollmentStepsValidThrough(currentStep);
+  }
+
+  protected isEnrollmentStepComplete(step: number): boolean {
+    return (
+      step !== this.enrollmentStep() &&
+      step <= this.highestCompletedEnrollmentStep() &&
+      this.areEnrollmentStepsValidThrough(step)
+    );
+  }
+
   protected goToEnrollmentStep(step: number): void {
-    if (this.enrollmentSaving() || step >= this.enrollmentStep()) return;
+    const currentStep = this.enrollmentStep();
+    if (!this.canNavigateToEnrollmentStep(step) || !this.enrollment) return;
+
+    if (step === currentStep + 1 && step > this.highestCompletedEnrollmentStep()) {
+      this.nextEnrollmentStep();
+      return;
+    }
 
     this.enrollmentError.set('');
     this.enrollmentStep.set(step);
@@ -432,9 +466,45 @@ export class MobileHealthComponent implements OnInit {
     if (!this.enrollment) return;
 
     const step = this.enrollmentStep();
-    if (step === 1 && !this.enrollment.legalAccepted) {
-      this.enrollmentError.set('Accept the disclosure before continuing.');
+    const validationError = this.enrollmentStepError(step);
+    if (validationError) {
+      this.enrollmentError.set(validationError);
       return;
+    }
+
+    this.enrollmentError.set('');
+    const nextStep = Math.min(this.enrollmentSteps.length, step + 1);
+    this.highestCompletedEnrollmentStep.update((completedStep) => Math.max(completedStep, step));
+    this.enrollment.currentStep = Math.max(this.enrollment.currentStep, nextStep);
+    this.enrollmentStep.set(nextStep);
+    this.persistEnrollment();
+  }
+
+  private restoreEnrollmentProgress(currentStep: number): void {
+    const normalizedStep = Math.min(
+      this.enrollmentSteps.length,
+      Math.max(1, currentStep || 1),
+    );
+    this.enrollmentStep.set(normalizedStep);
+    this.highestCompletedEnrollmentStep.set(Math.max(0, normalizedStep - 1));
+  }
+
+  private isEnrollmentStepValid(step: number): boolean {
+    return Boolean(this.enrollment) && !this.enrollmentStepError(step);
+  }
+
+  private areEnrollmentStepsValidThrough(step: number): boolean {
+    for (let candidate = 1; candidate <= step; candidate += 1) {
+      if (!this.isEnrollmentStepValid(candidate)) return false;
+    }
+    return true;
+  }
+
+  private enrollmentStepError(step: number): string {
+    if (!this.enrollment) return 'Your enrollment is not available.';
+
+    if (step === 1 && !this.enrollment.legalAccepted) {
+      return 'Accept the disclosure before continuing.';
     }
 
     if (
@@ -443,27 +513,21 @@ export class MobileHealthComponent implements OnInit {
         !this.enrollment.mailingAddress.trim() ||
         !this.enrollment.demographicVerified)
     ) {
-      this.enrollmentError.set('Review your information and confirm that it is correct.');
-      return;
+      return 'Review your information and confirm that it is correct.';
     }
 
     if (step === 3 && (!this.enrollment.effectiveDate || !this.hasPlanSelection())) {
-      this.enrollmentError.set('Choose an effective date and at least one plan.');
-      return;
+      return 'Choose an effective date and at least one plan.';
     }
 
     if (
       step === 4 &&
       (!this.enrollment.acknowledgmentAccepted || !this.enrollment.signature.trim())
     ) {
-      this.enrollmentError.set('Choose Yes and enter a signature before continuing.');
-      return;
+      return 'Choose Yes and enter a signature before continuing.';
     }
 
-    this.enrollmentError.set('');
-    this.enrollment.currentStep = Math.min(5, step + 1);
-    this.enrollmentStep.set(this.enrollment.currentStep);
-    this.persistEnrollment();
+    return '';
   }
 
   protected submitEnrollment(): void {

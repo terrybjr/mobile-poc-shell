@@ -26,6 +26,9 @@ html { -webkit-text-size-adjust: 100%; }
 /* Native mobile surfaces share the same scroll and touch behavior. */
 .mobile-shell,
 .mobile-home { overflow-x: hidden; overscroll-behavior-x: none; -webkit-tap-highlight-color: transparent; }
+.mobile-home:has(.mobile-modal-backdrop) { overflow-y: hidden; overscroll-behavior: none; }
+html:has(.mobile-modal-backdrop),
+body:has(.mobile-modal-backdrop) { overflow: hidden; overscroll-behavior: none; }
 .mobile-shell button,
 .mobile-home button,
 .mobile-shell a,
