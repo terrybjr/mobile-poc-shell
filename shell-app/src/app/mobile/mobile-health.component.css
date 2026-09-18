@@ -318,6 +318,11 @@ button:disabled {
   margin-left: 13px;
 }
 
+.mobile-inline-message {
+  margin-top: 12px;
+  margin-bottom: 12px;
+}
+
 .feature-card {
   margin-top: 17px;
   padding: 17px;
