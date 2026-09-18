@@ -160,7 +160,7 @@ export class MobileHealthComponent implements OnInit {
     this.enrollmentError.set(''); this.enrollment.currentStep = Math.min(5, step + 1); this.enrollmentStep.set(this.enrollment.currentStep); this.persistEnrollment();
   }
 
-  protected submitEnrollment(): void { const token = window.__mobileAuth?.token; if (!token) return; this.enrollmentSaving.set(true); this.http.post<EnrollmentDraft>(`${API_BASE}/mobile-poc/wss-apps/health-ws/api/health/enrollment/submit`, {}, this.options(token)).subscribe({ next: draft => { this.enrollment = { ...draft }; this.enrollmentSaving.set(false); this.enrollmentOpen.set(false); this.enrollmentMessage.set('Enrollment submitted for TRS review in this proof-of-concept.'); }, error: error => { this.enrollmentSaving.set(false); this.enrollmentError.set(this.updateError(error)); } }); }
+  protected submitEnrollment(): void { const token = window.__mobileAuth?.token; if (!token) return; this.enrollmentSaving.set(true); this.http.post<EnrollmentDraft>(`${API_BASE}/mobile-poc/wss-apps/health-ws/api/health/enrollment/submit`, {}, this.options(token)).subscribe({ next: draft => { this.enrollment = { ...draft }; this.enrollmentSaving.set(false); this.enrollmentOpen.set(false); this.activePage.set('home'); this.enrollmentMessage.set('Enrollment submitted for TRS review in this proof-of-concept.'); }, error: error => { this.enrollmentSaving.set(false); this.enrollmentError.set(this.updateError(error)); } }); }
 
   protected openDependentModal(): void { this.dependentModal.set('select'); }
   protected addExistingDependent(id: string): void { if (!this.enrollment) return; this.enrollment.dependents = this.enrollment.dependents.map(dependent => dependent.id === id ? { ...dependent, selected: true } : dependent); this.dependentModal.set('none'); this.persistEnrollment(); }
@@ -187,7 +187,7 @@ export class MobileHealthComponent implements OnInit {
     if (!this.canSubmitMbi()) { this.mbiError.set('Enter the MBI twice so the numbers can be verified.'); return; }
     this.mbiBusy.set(true); this.mbiSaved.set(false); this.mbiError.set('');
     this.http.put<MbiRecord[]>(`${API_BASE}/mobile-poc/wss-apps/health-ws/api/health/mbi`, this.draftMbiRecords, this.options(token)).subscribe({
-      next: data => { this.draftMbiRecords = data.map(record => ({ ...record })); this.mbiSaved.set(true); this.mbiBusy.set(false); },
+      next: data => { this.draftMbiRecords = data.map(record => ({ ...record })); this.mbiSaved.set(true); this.mbiBusy.set(false); this.activePage.set('home'); this.actionMessage.set('Medicare information submitted.'); },
       error: error => { this.logApiError('PUT /mbi', error); this.mbiError.set(this.updateError(error)); this.mbiBusy.set(false); }
     });
   }
