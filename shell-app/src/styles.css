@@ -13,3 +13,28 @@ main { max-width: 1320px; margin: auto; } h1 { font-size: 20px; margin: 0 8px 8p
 .loading, .error { margin: 10px 8px; padding: 12px 14px; border: 1px solid #31516f; background: #f7fafc; }.error { color: #8b1e1e; border-color: #ba6b6b; background: #fff6f6; } footer { background: #eaf1fb; color: #526779; text-align: center; padding: 22px; margin-top: 36px; font-size: 12px; }
 @media (max-width: 800px) { .page { margin: 0 12px; }.site-header { min-height: 118px; flex-direction: column; gap: 10px; }.utility { justify-content: flex-start; gap: 8px; }.utility em { display: none; }.main-nav { margin: 0 0 18px; }.main-nav a { padding: 12px 16px; white-space: nowrap; }.two-col, .columns { grid-template-columns: 1fr; gap: 0; }.stats { max-width: none; gap: 6px; }.stats h2 { min-height: 50px; padding: 12px 4px; font-size: 12px; }.stats b { font-size: 16px; }.notice { margin-left: 0; margin-right: 0; }.panel, h1 { margin-left: 0; margin-right: 0; }.panel label { width: 112px; }.rows span { float: none; display: block; margin-top: 4px; } }
 @media (max-width: 480px) { .brand { width: auto; }.stats { display: grid; grid-template-columns: 1fr; }.stats section { display: grid; grid-template-columns: 1fr 1fr; align-items: center; }.stats h2 { min-height: auto; }.stats b { padding: 10px; }.notice { display: block; }.notice strong { padding: 8px 12px; }.notice p { padding: 10px 12px; } }
+/* Keep iOS from auto-zooming native mobile form controls on focus. */
+html { -webkit-text-size-adjust: 100%; }
+.mobile-shell input,
+.mobile-home input,
+.mobile-home select,
+.mobile-home textarea,
+.mobile-feature input,
+.mobile-feature select,
+.mobile-feature textarea { font-size: 16px !important; }
+
+/* Native mobile surfaces share the same scroll and touch behavior. */
+.mobile-shell,
+.mobile-home { overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
+.mobile-shell button,
+.mobile-home button,
+.mobile-shell a,
+.mobile-home a { touch-action: manipulation; }
+
+@supports selector(.mobile-home:has(input:focus)) {
+  .mobile-home:has(input:focus) .mobile-toolbar {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(calc(100% + 24px));
+  }
+}

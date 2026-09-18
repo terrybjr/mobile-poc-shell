@@ -4,14 +4,18 @@
   </div>
 
   <section class="login-card" aria-labelledby="login-title">
-    <div class="eyebrow">SECURE MEMBER ACCESS</div>
-    <h1 id="login-title">Your retirement,<br /><span>always with you.</span></h1>
+    <h1 id="login-title">Your Mobile<br /><span>Benefits Portal</span></h1>
     <p class="intro">Sign in directly to your private MyTRS mobile experience.</p>
 
     @if (auth.hasSavedSession()) {
       <button class="primary-action biometric-action" type="button" [disabled]="auth.busy()" (click)="unlock()">
-        <span class="face-icon">⌾</span>
-        <span><strong>Unlock with {{ auth.biometricLabel() }}</strong><small>Use your saved secure session</small></span>
+        <span class="face-icon" aria-hidden="true">
+          <svg viewBox="0 0 32 32" role="img" aria-label="Face ID">
+            <path d="M10 5H7a2 2 0 0 0-2 2v3M22 5h3a2 2 0 0 1 2 2v3M10 27H7a2 2 0 0 1-2-2v-3M22 27h3a2 2 0 0 0 2-2v-3" />
+            <path d="M12 13.5c.8-1 1.9-1.5 3-1.5s2.2.5 3 1.5M12 19c1.1 1.2 2.4 1.8 4 1.8s2.9-.6 4-1.8M13 16h.01M19 16h.01" />
+          </svg>
+        </span>
+        <span><strong>{{ auth.biometricLabel() }}</strong></span>
         <span class="chevron">›</span>
       </button>
       <div class="divider"><span>or</span></div>
@@ -22,7 +26,7 @@
       <label>Password<input name="password" type="password" autocomplete="current-password" [(ngModel)]="password" required /></label>
       <button class="primary-action" type="submit" [disabled]="auth.busy()">
         <span class="key-icon">→</span>
-        <span><strong>Sign in securely</strong><small>Authenticate in the MyTRS app</small></span>
+        <span><strong>Sign in securely</strong><small>Use your MyTRS account</small></span>
         <span class="chevron">›</span>
       </button>
     </form>
@@ -40,6 +44,5 @@
     }
   </section>
 
-  <p class="security-note"><span>▣</span> Your saved session is protected by the iPhone Keychain. MyTRS never stores your password in the app.</p>
-  <footer>MyTRS mobile proof of concept · Fictional member data</footer>
+  <footer>Teacher Retirement System of Texas</footer>
 </main>

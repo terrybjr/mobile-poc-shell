@@ -3,6 +3,8 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { MobileAuthService } from './mobile-auth.service';
 import { MobileHealthComponent } from './mobile-health.component';
 import { MobilePensionComponent } from './mobile-pension.component';
+import { MobileDocumentsComponent } from './mobile-documents.component';
+import { MobileContactComponent } from './mobile-contact.component';
 
 type MobileTab = 'overview' | 'pension' | 'health' | 'documents' | 'contact';
 
@@ -11,10 +13,11 @@ interface PensionSummary {
   memberId: string;
   status: string;
 }
+const API_BASE = 'https://brianthedeveloper.com';
 
 @Component({
   selector: 'app-mobile-home',
-  imports: [MobileHealthComponent, MobilePensionComponent],
+  imports: [MobileHealthComponent, MobilePensionComponent, MobileDocumentsComponent, MobileContactComponent],
   templateUrl: './mobile-home.component.html',
   styleUrls: ['./mobile-home.component.css', './mobile-toolbar.css']
 })
@@ -35,7 +38,7 @@ export class MobileHomeComponent implements OnInit {
       this.pensionLoading.set(false);
       return;
     }
-    this.http.get<PensionSummary>('/pension/api/pension', {
+    this.http.get<PensionSummary>(`${API_BASE}/pension/api/pension`, {
       headers: { Authorization: `Bearer ${token}` }
     }).subscribe({
       next: data => { this.pension.set(data); this.pensionLoading.set(false); },
@@ -45,6 +48,7 @@ export class MobileHomeComponent implements OnInit {
 
   selectTab(tab: MobileTab): void {
     this.activeTab.set(tab);
+    window.scrollTo({ top: 0, behavior: 'auto' });
   }
 
   signOut(): void {

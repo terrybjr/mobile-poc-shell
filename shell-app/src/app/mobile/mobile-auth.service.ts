@@ -87,6 +87,17 @@ export class MobileAuthService {
         throw new Error(description ?? 'Direct mobile sign-in failed.');
       }
       await this.activateSession(tokens, this.claimMemberName(tokens.id_token), rememberDevice);
+      if (rememberDevice && Capacitor.isNativePlatform()) {
+        try {
+          await BiometricAuth.authenticate({
+            reason: 'Enable Face ID to unlock your saved MyTRS session',
+            allowDeviceCredential: true,
+            iosFallbackTitle: 'Use device passcode'
+          });
+        } catch {
+          // The session remains active; biometric unlock can be enabled later.
+        }
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : '';
       this.error.set(message || 'The username or password could not be verified.');
@@ -117,8 +128,9 @@ export class MobileAuthService {
   }
 
   async logout(): Promise<void> {
-    await SecureStorage.remove(SESSION_KEY).catch(() => false);
-    this.hasSavedSession.set(false);
+    // Sign out clears the active access token but retains the opt-in refresh
+    // token so the user can return through biometric unlock.
+    this.hasSavedSession.set((await this.readStoredSession()) !== null);
     this.authenticated.set(false);
     delete window.__mobileAuth;
     delete window.__healthAuth;

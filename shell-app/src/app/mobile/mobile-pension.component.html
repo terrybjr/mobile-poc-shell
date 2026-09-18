@@ -1,17 +1,59 @@
-<section class="mobile-feature">
-  <div class="feature-heading"><div><p class="eyebrow">PENSION</p><h2>Retirement account</h2></div><button type="button" class="quiet-button" (click)="refresh()" [disabled]="loading()">Refresh</button></div>
-  @if (loading()) { <p class="feature-status">Loading your Pension data…</p> }
-  @if (error()) { <p class="feature-error" role="alert">{{ error() }}</p> }
-  <section class="feature-card"><div class="feature-card-title">MYTRS PENSION</div><div class="feature-summary"><strong>{{ member().memberName }}</strong><span>{{ member().plan }}</span><span>{{ member().serviceYears }} years of service · ${{ member().estimatedMonthlyBenefit }} monthly benefit</span></div></section>
-  <form class="feature-form" (ngSubmit)="save()">
-    <label>Member name<input name="memberName" [(ngModel)]="draft.memberName" required /></label>
-    <label>Plan<input name="plan" [(ngModel)]="draft.plan" required /></label>
-    <label>Status<input name="status" [(ngModel)]="draft.status" required /></label>
-    <label>Communication<input name="communication" [(ngModel)]="draft.communication" required /></label>
-    <label>Service years<input name="serviceYears" type="number" min="0" [(ngModel)]="draft.serviceYears" required /></label>
-    <label>Monthly benefit<input name="estimatedMonthlyBenefit" type="number" min="0" [(ngModel)]="draft.estimatedMonthlyBenefit" required /></label>
-    <label>Retirement eligibility<input name="retirementEligibility" [(ngModel)]="draft.retirementEligibility" required /></label>
-    <div class="feature-actions"><button class="primary-button" type="submit" [disabled]="busy()">{{ busy() ? 'Saving…' : 'Save Pension data' }}</button><button class="secondary-button" type="button" (click)="reset()" [disabled]="busy()">Reset demo data</button></div>
+<section class="mobile-feature" aria-labelledby="pension-title" [attr.aria-busy]="loading() || busy()">
+  <div class="feature-heading">
+    <div>
+      <p class="eyebrow">PENSION</p>
+      <h2 id="pension-title">Retirement account</h2>
+    </div>
+    <button type="button" class="quiet-button" (click)="refresh()" [disabled]="loading() || busy()" aria-label="Refresh Pension data">Refresh</button>
+  </div>
+
+  @if (loading()) {
+    <p class="feature-status" role="status">Loading your Pension data…</p>
+  }
+  @if (error()) {
+    <p class="feature-error" role="alert">{{ error() }}</p>
+  }
+
+  <section class="feature-card" aria-labelledby="pension-card-title">
+    <div id="pension-card-title" class="feature-card-title">MYTRS PENSION</div>
+    <div class="feature-summary">
+      <strong>{{ member().memberName }}</strong>
+      <span>{{ member().plan }}</span>
+      <span>{{ member().serviceYears }} years of service · ${{ member().estimatedMonthlyBenefit }} monthly benefit</span>
+    </div>
+  </section>
+
+  <form class="feature-form" (ngSubmit)="save()" autocomplete="off" aria-label="Edit Pension sample information" [attr.aria-busy]="busy()">
+    <fieldset [disabled]="loading() || busy()">
+      <label for="pension-member-name">Member name</label>
+      <input id="pension-member-name" name="memberName" [(ngModel)]="draft.memberName" autocomplete="name" required />
+
+      <label for="pension-plan">Plan</label>
+      <input id="pension-plan" name="plan" [(ngModel)]="draft.plan" required />
+
+      <label for="pension-status">Status</label>
+      <input id="pension-status" name="status" [(ngModel)]="draft.status" required />
+
+      <label for="pension-communication">Communication</label>
+      <input id="pension-communication" name="communication" [(ngModel)]="draft.communication" required />
+
+      <label for="pension-service-years">Service years</label>
+      <input id="pension-service-years" name="serviceYears" type="number" inputmode="numeric" min="0" step="1" [(ngModel)]="draft.serviceYears" required />
+
+      <label for="pension-monthly-benefit">Monthly benefit</label>
+      <input id="pension-monthly-benefit" name="estimatedMonthlyBenefit" type="number" inputmode="decimal" min="0" step="1" [(ngModel)]="draft.estimatedMonthlyBenefit" required />
+
+      <label for="pension-retirement-eligibility">Retirement eligibility</label>
+      <input id="pension-retirement-eligibility" name="retirementEligibility" [(ngModel)]="draft.retirementEligibility" required />
+
+      <div class="feature-actions">
+        <button class="primary-button" type="submit">{{ busy() ? 'Saving…' : 'Save Pension data' }}</button>
+        <button class="secondary-button" type="button" (click)="reset()">Restore sample values</button>
+      </div>
+    </fieldset>
   </form>
-  @if (saved()) { <p class="feature-success" role="status">Pension data updated. Switch tabs or refresh to read the shared store.</p> }
+
+  @if (saved()) {
+    <p class="feature-success" role="status">Pension information updated.</p>
+  }
 </section>

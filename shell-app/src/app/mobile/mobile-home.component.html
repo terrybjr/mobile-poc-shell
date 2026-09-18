@@ -1,19 +1,19 @@
 <main class="mobile-home">
   <header class="home-header">
     <div class="mobile-brand"><span><strong>MyTRS</strong><small>MEMBER MOBILE</small></span></div>
-    <button type="button" class="sign-out" (click)="signOut()">Sign out</button>
+    <button type="button" class="sign-out" (click)="signOut()" aria-label="Sign out of MyTRS">Sign out</button>
   </header>
 
   <section class="welcome">
     <p class="eyebrow">MEMBER HOME</p>
     <h1>Hello, {{ pension().memberName }}</h1>
-    <p>Your secure mobile experience is ready.</p>
+    <p>Your benefit information is ready when you are.</p>
   </section>
 
   <section class="online-card" aria-label="Connection status">
     <span class="online-dot" [class.offline]="!auth.online()"></span>
     <div><strong>{{ auth.online() ? 'You are online' : 'You are offline' }}</strong><small>{{ auth.online() ? 'Your member information is up to date.' : 'Some information may be unavailable.' }}</small></div>
-    <span class="lock">▣</span>
+    <span class="lock" aria-hidden="true">✓</span>
   </section>
 
   @if (activeTab() === 'overview') {
@@ -24,22 +24,19 @@
     <div class="member-grid"><div><small>MEMBER STATUS</small><strong>{{ pension().status }}</strong></div><div><small>TRS PARTICIPANT ID</small><strong>{{ pension().memberId }}</strong></div></div>
   </section>
 
-  <section class="hello-card">
-    <span class="hello-icon">✦</span>
-    <div><p class="eyebrow">HELLO WORLD</p><h2>Welcome to MyTRS mobile.</h2><p>This native Shell landing page is intentionally limited to the mobile experience. The Pension and Health tabs use the Shell session and their own approved REST APIs.</p></div>
+  <section class="hello-card" aria-labelledby="member-services-title">
+    <div><p class="eyebrow">MEMBER SERVICES</p><h2 id="member-services-title">Manage your benefits in one place.</h2><p>Review your pension and health information, access documents, and contact TRS support.</p></div>
   </section>
 
-  <p class="mobile-footnote">MyTRS mobile proof of concept · Fictional member data</p>
+  <p class="mobile-footnote">Teacher Retirement System of Texas</p>
   } @else if (activeTab() === 'pension') {
     <app-mobile-pension />
   } @else if (activeTab() === 'health') {
     <app-mobile-health />
-  } @else {
-    <section class="mobile-placeholder" aria-live="polite">
-      <p class="eyebrow">{{ activeTab() === 'documents' ? 'DOCUMENTS' : 'CONTACT US' }}</p>
-      <h2>{{ activeTab() === 'documents' ? 'Documents are coming soon.' : 'Contact support is coming soon.' }}</h2>
-      <p>This native mobile area is intentionally limited to the current proof-of-concept experience.</p>
-    </section>
+  } @else if (activeTab() === 'documents') {
+    <app-mobile-documents />
+  } @else if (activeTab() === 'contact') {
+    <app-mobile-contact />
   }
 
   <nav class="mobile-toolbar" aria-label="Mobile member areas">
