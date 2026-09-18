@@ -10,6 +10,10 @@ interface HealthSummary {
   deductible: number; fsaBalance: number; nextAppointment: string;
 }
 
+interface CoverageRow {
+  coverage: string; plan: string; effectiveDate: string; status: string;
+}
+
 interface MbiRecord {
   name: string; relationship: string; medicareNumber: string; reentryMedicareNumber: string;
   partAStartDate: string; partBStartDate: string;
@@ -43,11 +47,10 @@ export class MobileHealthComponent implements OnInit {
   private readonly http = inject(HttpClient);
   protected readonly loading = signal(true);
   protected readonly busy = signal(false);
-  protected readonly saved = signal(false);
   protected readonly actionMessage = signal('');
   protected readonly error = signal('');
+  protected readonly resetMessage = signal('');
   protected readonly member = signal<HealthSummary>({ ...INITIAL_HEALTH });
-  protected draft: HealthSummary = { ...INITIAL_HEALTH };
   protected readonly mbiBusy = signal(false);
   protected readonly mbiSaved = signal(false);
   protected readonly mbiError = signal('');
@@ -68,24 +71,45 @@ export class MobileHealthComponent implements OnInit {
   ngOnInit(): void { this.load(); }
   protected refresh(): void { this.load(); }
 
-  protected save(): void {
+  protected resetDemo(): void {
     const token = window.__mobileAuth?.token;
     if (!token) { this.error.set('Your mobile session is no longer available.'); return; }
-    this.busy.set(true); this.saved.set(false); this.error.set('');
-    this.http.put<HealthSummary>(`${API_BASE}/mobile-poc/wss-apps/health-ws/api/health`, this.draft, this.options(token)).subscribe({
-      next: data => { this.apply(data); this.saved.set(true); this.busy.set(false); },
-      error: error => { this.logApiError('PUT', error); this.error.set(this.updateError(error)); this.busy.set(false); }
+    this.busy.set(true); this.resetMessage.set(''); this.error.set('');
+    this.http.delete<HealthSummary>(`${API_BASE}/mobile-poc/wss-apps/health-ws/api/health`, this.options(token)).subscribe({
+      next: data => { this.apply(data); this.enrollment = null; this.draftMbiRecords = []; this.loadMbi(token); this.resetMessage.set('Demo reset. No current coverage or submitted MBI remains.'); this.busy.set(false); },
+      error: error => { this.logApiError('DELETE', error); this.error.set(this.updateError(error)); this.busy.set(false); }
     });
   }
 
-  protected reset(): void {
-    const token = window.__mobileAuth?.token;
-    if (!token) { this.error.set('Your mobile session is no longer available.'); return; }
-    this.busy.set(true); this.saved.set(false); this.error.set('');
-    this.http.delete<HealthSummary>(`${API_BASE}/mobile-poc/wss-apps/health-ws/api/health`, this.options(token)).subscribe({
-      next: data => { this.apply(data); this.loadMbi(token); this.saved.set(true); this.busy.set(false); },
-      error: error => { this.logApiError('DELETE', error); this.error.set(this.updateError(error)); this.busy.set(false); }
-    });
+  protected currentCoverage(): CoverageRow[] {
+    const rows: CoverageRow[] = [];
+    if (this.enrollment?.status === 'SUBMITTED') {
+      const selections: Array<[string, string, string]> = [
+        ['Medical / Rx', 'TRS-Care Medical and Prescription', this.enrollment.medicalCoverage],
+        ['Dental', 'TRS-Care Dental', this.enrollment.dentalCoverage],
+        ['Vision', 'TRS-Care Vision', this.enrollment.visionCoverage]
+      ];
+      for (const [coverage, plan, selection] of selections) {
+        if (selection === 'Enroll') rows.push({ coverage, plan, effectiveDate: this.formatDate(this.enrollment.effectiveDate), status: 'Enrolled' });
+      }
+    }
+    for (const record of this.draftMbiRecords) {
+      if (record.medicareNumber && record.medicareNumber === record.reentryMedicareNumber) {
+        rows.push({ coverage: 'Medicare', plan: `MBI — ${record.name}`, effectiveDate: this.mbiEffectiveDate(record), status: 'Submitted' });
+      }
+    }
+    return rows;
+  }
+
+  private formatDate(value: string): string {
+    if (!value) return 'Not provided';
+    const [year, month, day] = value.split('-');
+    return year && month && day ? `${month}/${day}/${year}` : value;
+  }
+
+  private mbiEffectiveDate(record: MbiRecord): string {
+    const dates = [record.partAStartDate && `Part A ${this.formatDate(record.partAStartDate)}`, record.partBStartDate && `Part B ${this.formatDate(record.partBStartDate)}`].filter(Boolean);
+    return dates.length ? dates.join(' · ') : 'Not provided';
   }
 
   protected selectAction(action: string): void {
@@ -224,6 +248,7 @@ export class MobileHealthComponent implements OnInit {
     this.loading.set(true); this.error.set('');
     if (!token) { this.error.set('Your mobile session is no longer available.'); this.loading.set(false); return; }
     this.loadMbi(token);
+    this.loadEnrollmentState(token);
     this.http.get<HealthSummary>(`${API_BASE}/mobile-poc/wss-apps/health-ws/api/health`, this.options(token)).subscribe({
       next: data => { this.apply(data); this.loading.set(false); },
       error: error => { this.logApiError('GET', error); this.error.set(this.loadError(error)); this.loading.set(false); }
@@ -237,7 +262,14 @@ export class MobileHealthComponent implements OnInit {
     });
   }
 
-  private apply(data: HealthSummary): void { this.member.set(data); this.draft = { ...data }; }
+  private loadEnrollmentState(token: string): void {
+    this.http.get<EnrollmentDraft | null>(`${API_BASE}/mobile-poc/wss-apps/health-ws/api/health/enrollment`, this.options(token)).subscribe({
+      next: draft => { this.enrollment = draft ? { ...draft } : null; },
+      error: () => { this.enrollment = null; }
+    });
+  }
+
+  private apply(data: HealthSummary): void { this.member.set(data); }
   private options(token: string): { headers: { Authorization: string } } { return { headers: { Authorization: `Bearer ${token}` } }; }
 
   private logApiError(method: string, error: unknown): void {

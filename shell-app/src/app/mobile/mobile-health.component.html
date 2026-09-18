@@ -46,8 +46,10 @@
   @if (dependentModal() === 'new') { <div class="mobile-modal-backdrop"><section class="mobile-modal" role="dialog" aria-modal="true" aria-labelledby="mobile-new-dependent-title"><button type="button" class="mobile-modal-close" (click)="dependentModal.set('select')" aria-label="Close">×</button><h3 id="mobile-new-dependent-title">Add dependent</h3><p class="mobile-muted">Fields marked * are required.</p><label>Legal first name *<input [(ngModel)]="newDependent.name" name="mobileNewDependentName" /></label><label>Relationship *<select [(ngModel)]="newDependent.relationship" name="mobileNewDependentRelationship"><option>Spouse</option><option>Child</option><option>Other</option></select></label><label>Date of birth<input type="date" name="mobileNewDependentDob" /></label><fieldset class="mobile-radio-group"><legend>Gender</legend><label><input type="radio" name="mobileDependentGender" /> Male</label><label><input type="radio" name="mobileDependentGender" /> Female</label></fieldset><label>SSN<input type="password" name="mobileNewDependentSsn" /></label><div class="mobile-modal-actions"><button type="button" class="secondary-button" (click)="dependentModal.set('select')">Close</button><button type="button" class="primary-button" (click)="saveNewDependent()" [disabled]="!newDependent.name.trim()">Save</button></div></section></div> }
 
   @if (activePage() === 'home') { <section class="mobile-coverage" aria-labelledby="mobile-coverage-title">
-    <div class="mobile-section-label" id="mobile-coverage-title">CURRENT COVERAGE</div>
-    <div class="mobile-coverage-empty"><strong>No coverage on file</strong><span>This proof-of-concept has no current TRS-Care coverage record.</span></div>
+    <div class="mobile-section-label coverage-section-heading"><span id="mobile-coverage-title">CURRENT COVERAGE</span><button type="button" class="quiet-button" (click)="resetDemo()" [disabled]="busy()">{{ busy() ? 'Resetting…' : 'Reset demo' }}</button></div>
+    @if (currentCoverage().length) { <div class="mobile-coverage-list">@for (row of currentCoverage(); track row.coverage + row.plan) { <article class="mobile-coverage-row"><strong>{{ row.coverage }}</strong><span>{{ row.plan }}</span><small>{{ row.effectiveDate }} · {{ row.status }}</small></article> }</div> }
+    @else { <div class="mobile-coverage-empty"><strong>No coverage on file</strong><span>Your selected TRS-Care plans and submitted Medicare information will appear here.</span></div> }
+    @if (resetMessage()) { <p class="feature-success mobile-reset-message" role="status">{{ resetMessage() }}</p> }
   </section> }
 
   @if (activePage() === 'mbi') { <section class="feature-page-back"><button type="button" class="secondary-button" (click)="returnToHealthHome()">← Back to Health</button></section><section class="mobile-mbi" id="mobile-mbi-update" aria-labelledby="mobile-mbi-title">
@@ -81,37 +83,5 @@
     </div>
   </section>
 
-  <form class="feature-form" (ngSubmit)="save()" autocomplete="off" aria-label="Edit Health sample information" [attr.aria-busy]="busy()">
-    <fieldset [disabled]="loading() || busy()">
-      <label for="health-member-name">Member name</label>
-      <input id="health-member-name" name="memberName" [(ngModel)]="draft.memberName" autocomplete="name" required />
-
-      <label for="health-plan">Plan</label>
-      <input id="health-plan" name="plan" [(ngModel)]="draft.plan" required />
-
-      <label for="health-status">Status</label>
-      <input id="health-status" name="status" [(ngModel)]="draft.status" required />
-
-      <label for="health-medical">Medical plan</label>
-      <input id="health-medical" name="medical" [(ngModel)]="draft.medical" required />
-
-      <label for="health-deductible">Deductible</label>
-      <input id="health-deductible" name="deductible" type="number" inputmode="decimal" min="0" step="1" [(ngModel)]="draft.deductible" required />
-
-      <label for="health-fsa-balance">FSA balance</label>
-      <input id="health-fsa-balance" name="fsaBalance" type="number" inputmode="decimal" min="0" step="1" [(ngModel)]="draft.fsaBalance" required />
-
-      <label for="health-next-appointment">Next appointment</label>
-      <input id="health-next-appointment" name="nextAppointment" [(ngModel)]="draft.nextAppointment" required />
-
-      <div class="feature-actions">
-        <button class="primary-button" type="submit">{{ busy() ? 'Saving…' : 'Save Health data' }}</button>
-        <button class="secondary-button" type="button" (click)="reset()">Restore sample values</button>
-      </div>
-    </fieldset>
-  </form> }
-
-  @if (saved()) {
-    <p class="feature-success" role="status">Health information updated.</p>
   }
 </section>
