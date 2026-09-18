@@ -4,6 +4,7 @@ import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CapacitorPluginMlKitTextRecognition } from '@pantrist/capacitor-plugin-ml-kit-text-recognition';
+import { MobileVisionTextRecognition } from './mobile-vision-text-recognition';
 
 interface HealthSummary {
   memberName: string;
@@ -787,14 +788,22 @@ export class MobileHealthComponent implements OnInit {
       });
       if (!photo.base64String) throw new Error('The camera did not return an image.');
       this.mbiPhotoStatus.set('Reading the Medicare card with on-device OCR…');
-      const result = await CapacitorPluginMlKitTextRecognition.detectText({
-        base64Image: photo.base64String,
-        rotation: 0,
-      });
+      const result =
+        Capacitor.getPlatform() === 'ios'
+          ? await MobileVisionTextRecognition.detectText({ base64Image: photo.base64String })
+          : await CapacitorPluginMlKitTextRecognition.detectText({
+              base64Image: photo.base64String,
+              rotation: 0,
+            });
       this.mapOcrToSelectedMbi(result.text);
     } catch (error) {
       console.error('[Mobile Health] MBI camera OCR failed', error);
-      this.mbiError.set('The MBI card could not be read. Try a brighter, closer photo.');
+      const message = error instanceof Error ? error.message : String(error);
+      this.mbiError.set(
+        this.isOcrUnavailable(message)
+          ? 'On-device OCR is unavailable in this iOS build. Rebuild the app after syncing the iOS project.'
+          : 'The MBI card could not be read. Try a brighter, closer photo.',
+      );
       this.mbiPhotoStatus.set('');
     } finally {
       this.mbiBusy.set(false);
@@ -802,17 +811,8 @@ export class MobileHealthComponent implements OnInit {
   }
 
   private mapOcrToSelectedMbi(text: string): void {
-    const lines = text
-      .split(/\r?\n/)
-      .map((line) => line.trim())
-      .filter(Boolean);
-    const mbi = lines
-      .map((line) => line.toUpperCase().replace(/[^A-Z0-9]/g, ''))
-      .map((line) => line.match(/[1-9][A-Z0-9]{10}/)?.[0])
-      .find(Boolean);
-    const dates = [...text.matchAll(/\b\d{2}[/-]\d{2}[/-]\d{4}\b/g)].map((match) =>
-      match[0].replaceAll('/', '-'),
-    );
+    const mbi = this.extractMbi(text);
+    const dates = this.extractOcrDates(text);
     const index = this.selectedMbiIndex();
     const selected = this.draftMbiRecords[index];
     if (!selected || !mbi) {
@@ -827,8 +827,8 @@ export class MobileHealthComponent implements OnInit {
         ? {
             ...record,
             medicareNumber: mbi,
-            partAStartDate: this.toDateInput(dates[0]) || record.partAStartDate,
-            partBStartDate: this.toDateInput(dates[1]) || record.partBStartDate,
+            partAStartDate: dates.partA || dates.all[0] || record.partAStartDate,
+            partBStartDate: dates.partB || dates.all[1] || record.partBStartDate,
           }
         : { ...record },
     );
@@ -837,10 +837,62 @@ export class MobileHealthComponent implements OnInit {
     );
   }
 
-  private toDateInput(value?: string): string {
-    if (!value) return '';
-    const [month, day, year] = value.split('-');
-    return `${year}-${month}-${day}`;
+  private extractMbi(text: string): string | undefined {
+    const normalizedLines = text
+      .split(/\r?\n/)
+      .map((line) => line.toUpperCase().replace(/[^A-Z0-9]/g, ''))
+      .filter(Boolean);
+    const strictMbiPattern =
+      /[1-9][A-HJ-NP-Z][A-HJ-NP-Z0-9]\d[A-HJ-NP-Z][A-HJ-NP-Z0-9]\d[A-HJ-NP-Z][A-HJ-NP-Z0-9]\d\d/;
+    const broadMbiPattern = /[1-9][A-Z0-9]{10}/;
+
+    for (const line of normalizedLines) {
+      const candidate = line.match(strictMbiPattern)?.[0] ?? line.match(broadMbiPattern)?.[0];
+      if (candidate) return candidate;
+    }
+
+    const compactText = text.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    return compactText.match(strictMbiPattern)?.[0] ?? compactText.match(broadMbiPattern)?.[0];
+  }
+
+  private extractOcrDates(text: string): { all: string[]; partA?: string; partB?: string } {
+    const matches = [
+      ...text.matchAll(/\b(0?[1-9]|1[0-2])([/.-])(0?[1-9]|[12]\d|3[01])\2((?:19|20)\d{2})\b/g),
+      ...text.matchAll(/\b((?:19|20)\d{2})([/.-])(0?[1-9]|1[0-2])\2(0?[1-9]|[12]\d|3[01])\b/g),
+    ]
+      .map((match) => {
+        const isYearFirst = match[1].length === 4;
+        const year = isYearFirst ? match[1] : match[4];
+        const month = isYearFirst ? match[3] : match[1];
+        const day = isYearFirst ? match[4] : match[3];
+        return {
+          index: match.index ?? 0,
+          value: `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`,
+        };
+      })
+      .sort((left, right) => left.index - right.index);
+    const uniqueDates = [...new Map(matches.map((match) => [match.index, match.value])).values()];
+    let partA: string | undefined;
+    let partB: string | undefined;
+
+    for (const match of matches) {
+      const precedingText = text.slice(Math.max(0, match.index - 50), match.index).toUpperCase();
+      const partALabel = precedingText.lastIndexOf('PART A');
+      const partBLabel = precedingText.lastIndexOf('PART B');
+      if (partALabel > partBLabel && !partA) partA = match.value;
+      if (partBLabel > partALabel && !partB) partB = match.value;
+    }
+
+    return { all: uniqueDates, partA, partB };
+  }
+
+  private isOcrUnavailable(message: string): boolean {
+    const normalizedMessage = message.toLowerCase();
+    return (
+      normalizedMessage.includes('not implemented') ||
+      normalizedMessage.includes('unavailable') ||
+      (normalizedMessage.includes('plugin') && normalizedMessage.includes('not found'))
+    );
   }
 
   private load(): void {
