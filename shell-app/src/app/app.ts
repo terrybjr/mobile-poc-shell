@@ -27,6 +27,7 @@ export class App implements OnInit {
     && (window.location.protocol === 'capacitor:' || window.location.hostname === 'localhost');
   protected readonly embeddedHostedMode = Capacitor.isNativePlatform() && !this.mobileMode;
   protected readonly mobileAuth = inject(MobileAuthService);
+  protected readonly mobileNavOpen = signal(false);
 
   private readonly keycloak = new Keycloak({
     url: 'https://brianthedeveloper.com',

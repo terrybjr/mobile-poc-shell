@@ -19,7 +19,9 @@
       </div>
     </header>
 
-    <nav class="main-nav" aria-label="Member navigation">
+    <button class="mobile-nav-toggle" type="button" (click)="mobileNavOpen.set(!mobileNavOpen())" [attr.aria-expanded]="mobileNavOpen()" aria-controls="member-nav"><span aria-hidden="true">☰</span> Menu</button>
+    @if (mobileNavOpen()) { <button class="mobile-nav-backdrop" type="button" aria-label="Close member navigation" (click)="mobileNavOpen.set(false)"></button> }
+    <nav id="member-nav" class="main-nav" [class.mobile-nav-open]="mobileNavOpen()" aria-label="Member navigation">
       <a href="/mobile-poc/">Retirement<br />Benefits</a>
       <a href="/mobile-poc/">Account<br />Summary</a>
       <a class="active" href="/mobile-poc/wss-apps/myhealth">Health<br />Coverage</a>

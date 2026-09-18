@@ -38,7 +38,7 @@ The browser callback remains `https://brianthedeveloper.com/mobile-poc/wss-apps/
 
 The native Health tab also mirrors the web Initial Enrollment demo. It calls the Health enrollment draft endpoints with the Shell bearer token, presents the Medicare eligibility gate, saves/resumes the five-step flow, supports existing or newly added dependents, and shows mocked coverage premiums before submission. This is a mobile-optimized native view; it does not open the hosted Health MFE or legacy Pension pages.
 
-The browser Shell keeps feature boundaries as routes: `/mobile-poc/wss-apps/myhealth` is the Health landing page, `/mobile-poc/wss-apps/myhealth/mbi` is the MBI page, and `/mobile-poc/wss-apps/myhealth/enrollment` is the enrollment stepper. NGINX serves the Shell entry document for each route so direct navigation and refresh work correctly; the Health remote renders the page selected by the route.
+The browser Shell keeps feature boundaries as routes: `/mobile-poc/wss-apps/myhealth` is the Health landing page, `/mobile-poc/wss-apps/myhealth/mbi` is the MBI page, and `/mobile-poc/wss-apps/myhealth/enrollment` is the enrollment stepper. NGINX serves the Shell entry document for each route so direct navigation and refresh work correctly; the Health remote renders the page selected by the route. Its browser navigation uses the same five-item member navigation as the legacy Pension portal, with a slide-out drawer at phone widths. That web navigation remains independent from the installed native Shell toolbar.
 
 ## Secure login presentation
 
