@@ -9,9 +9,12 @@ fails during submission, check the server state after reconnecting before retryi
 session for users who do not remember the device, and opted-in Keychain storage.
 It handles online/offline events, refreshes before token expiry, and retries
 temporary failures with backoff capped at one minute. Retry is also available in
-the connection card. Network failures do not clear authentication. Rejected
-refresh sessions still require sign-in. Background biometric locking retains the
-mounted screen behind a hidden, inert container so unlocking restores the form.
+the connection card. Network failures do not clear authentication. Remembered
+devices request Keycloak `offline_access`; if the server refresh session is later
+rejected, successful biometrics still unlock cached information indefinitely in
+read-only mode. A credential sign-in is required only to restore server-backed
+updates. Background biometric locking retains the mounted screen behind a hidden,
+inert container so unlocking restores the form.
 
 `mobile-network.interceptor.ts` bounds authenticated native API calls to 15 seconds
 and reports connectivity/server failures to the session service. Browser-hosted

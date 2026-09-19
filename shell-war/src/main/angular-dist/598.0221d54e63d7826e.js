@@ -1,0 +1,1 @@
+(self.webpackChunkshell_app=self.webpackChunkshell_app||[]).push([[598],{6598(s,l,n){n.r(l),n.d(l,{Network:()=>h});const h=(0,n(4283).registerPlugin)("Network",{web:()=>n.e(780).then(n.bind(n,3780)).then(o=>new o.NetworkWeb)})}}]);

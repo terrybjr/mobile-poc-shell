@@ -1,8 +1,10 @@
 import { Capacitor } from '@capacitor/core';
 import { App } from '@capacitor/app';
+import { Network } from '@capacitor/network';
 import { BiometricAuth, BiometryType } from '@aparajita/capacitor-biometric-auth';
 import { KeychainAccess, SecureStorage } from '@aparajita/capacitor-secure-storage';
 import { inject, Injectable, InjectionToken, signal } from '@angular/core';
+import { MobileDeviceSecurity } from './mobile-device-security';
 
 export const MOBILE_SECURE_STORAGE = new InjectionToken<typeof SecureStorage>(
   'Mobile secure storage',
@@ -57,6 +59,7 @@ export class MobileAuthService {
   readonly lockedForBackground = signal(false);
   readonly reconnecting = signal(false);
   readonly connectionRestored = signal(0);
+  readonly onlineSignInRequired = signal(false);
   private biometricPromptActive = false;
   private revalidationInFlight = false;
   private sessionGeneration = 0;
@@ -71,24 +74,31 @@ export class MobileAuthService {
       return;
     }
 
-    window.addEventListener('online', () => {
-      this.online.set(true);
-      if (this.authenticated()) void this.revalidateOnlineSession();
-    });
-    window.addEventListener('offline', () => {
-      this.online.set(false);
-      this.cancelRetry();
-      if (this.authenticated()) this.markUnavailable();
-    });
+    window.addEventListener('online', () => this.applyNetworkStatus(true));
+    window.addEventListener('offline', () => this.applyNetworkStatus(false));
 
-    await App.addListener('appStateChange', ({ isActive }) => {
-      if (!isActive) {
-        this.lockForBackground();
-      } else if (this.lockedForBackground()) {
-        this.error.set('Unlock with biometrics to continue.');
-      } else if (this.authenticated() && this.online()) {
-        void this.revalidateOnlineSession();
+    try {
+      this.applyNetworkStatus((await Network.getStatus()).connected);
+      await Network.addListener('networkStatusChange', ({ connected }) => {
+        this.applyNetworkStatus(connected);
+      });
+    } catch {
+      // Browser events remain as a fallback for an older native package that
+      // has not yet synchronized the Capacitor Network plugin.
+    }
+
+    if (Capacitor.getPlatform() === 'ios') {
+      try {
+        await MobileDeviceSecurity.addListener('deviceLocked', () => this.lockForBackground());
+      } catch {
+        await App.addListener('pause', () => this.lockForBackground());
       }
+    } else {
+      await App.addListener('pause', () => this.lockForBackground());
+    }
+
+    await App.addListener('resume', () => {
+      void this.handleNativeResume();
     });
 
     try {
@@ -116,6 +126,7 @@ export class MobileAuthService {
     this.activeSession = null;
     this.authenticated.set(false);
     this.lockedForBackground.set(false);
+    this.onlineSignInRequired.set(false);
     delete window.__mobileAuth;
     delete window.__healthAuth;
     this.error.set('');
@@ -135,7 +146,10 @@ export class MobileAuthService {
             client_id: CLIENT_ID,
             username: username.trim(),
             password,
-            scope: 'openid profile',
+            // Keycloak offline tokens are not tied to the normal short SSO
+            // idle window. Realms that permit this client scope can therefore
+            // keep remembered-device biometric access online for much longer.
+            scope: 'openid profile offline_access',
           }),
         },
       );
@@ -188,6 +202,10 @@ export class MobileAuthService {
         throw new Error('No saved session is available.');
       }
       this.activeSession = saved;
+      if (this.onlineSignInRequired()) {
+        await this.activateStoredSession(saved, true);
+        return;
+      }
       if (!this.online()) {
         await this.activateStoredSession(saved);
         return;
@@ -197,19 +215,17 @@ export class MobileAuthService {
         const tokens = await this.exchangeRefreshToken(saved.refreshToken);
         await this.activateSession(tokens, saved.memberName, this.hasSavedSession());
       } catch (error) {
-        // A temporary network outage must not turn a valid local biometric
-        // unlock into a forced credential login. An invalid/revoked refresh
-        // token still requires a fresh sign-in.
-        if (error instanceof NetworkAuthError && saved.accessToken) {
+        // A temporary network outage or expired server refresh session must
+        // not turn a valid local biometric unlock into a forced credential
+        // login. Only server-backed updates require fresh credentials.
+        if (error instanceof NetworkAuthError) {
           await this.activateStoredSession(saved);
           return;
         }
-        if (error instanceof NetworkAuthError) {
-          this.error.set('MyTRS is temporarily unavailable. Try again when you reconnect.');
-          this.busy.set(false);
+        if (error instanceof InvalidSessionError) {
+          await this.activateStoredSession(saved, true);
           return;
         }
-        if (error instanceof InvalidSessionError) await this.clearSavedSession();
         throw error;
       }
     } catch (error) {
@@ -233,6 +249,7 @@ export class MobileAuthService {
     this.authenticated.set(false);
     this.offlineMode.set(false);
     this.lockedForBackground.set(false);
+    this.onlineSignInRequired.set(false);
     delete window.__mobileAuth;
     delete window.__healthAuth;
     this.error.set('');
@@ -250,6 +267,40 @@ export class MobileAuthService {
 
   retryConnection(): void {
     if (this.authenticated() && this.online()) void this.revalidateOnlineSession();
+  }
+
+  private applyNetworkStatus(connected: boolean): void {
+    const wasOnline = this.online();
+    this.online.set(connected);
+    if (!connected) {
+      this.cancelRetry();
+      if (this.authenticated()) this.markUnavailable();
+      return;
+    }
+    if (
+      this.authenticated() &&
+      !this.onlineSignInRequired() &&
+      (!wasOnline || this.offlineMode())
+    ) {
+      void this.revalidateOnlineSession();
+    }
+  }
+
+  private async handleNativeResume(): Promise<void> {
+    try {
+      this.applyNetworkStatus((await Network.getStatus()).connected);
+    } catch {
+      this.applyNetworkStatus(navigator.onLine);
+    }
+    if (this.lockedForBackground()) {
+      this.error.set('Unlock with biometrics to continue.');
+    } else if (
+      this.authenticated() &&
+      this.online() &&
+      !this.onlineSignInRequired()
+    ) {
+      void this.revalidateOnlineSession();
+    }
   }
 
   private cancelRetry(): void {
@@ -364,6 +415,7 @@ export class MobileAuthService {
     }
     if (generation !== this.sessionGeneration) return;
     this.offlineMode.set(!this.online());
+    this.onlineSignInRequired.set(false);
     this.lockedForBackground.set(false);
     this.authenticated.set(true);
     this.busy.set(false);
@@ -372,7 +424,10 @@ export class MobileAuthService {
     this.scheduleRetry(Math.max(10_000, ((tokens.expires_in || 60) - 30) * 1_000));
   }
 
-  private async activateStoredSession(saved: StoredSession): Promise<void> {
+  private async activateStoredSession(
+    saved: StoredSession,
+    onlineSignInRequired = false,
+  ): Promise<void> {
     this.activeSession = saved;
     const name = saved.memberName || 'Jordan Davis';
     this.memberName.set(name);
@@ -386,10 +441,11 @@ export class MobileAuthService {
     window.__healthAuth = { authenticated: true, token: saved.accessToken ?? '' };
     window.dispatchEvent(new Event('health-auth-ready'));
     this.offlineMode.set(true);
+    this.onlineSignInRequired.set(onlineSignInRequired);
     this.lockedForBackground.set(false);
     this.authenticated.set(true);
     this.busy.set(false);
-    this.scheduleRetry();
+    if (!onlineSignInRequired) this.scheduleRetry();
   }
 
   private async revalidateOnlineSession(): Promise<void> {
@@ -411,8 +467,13 @@ export class MobileAuthService {
     } catch (error) {
       if (generation !== this.sessionGeneration || !this.authenticated()) return;
       if (error instanceof InvalidSessionError) {
-        await this.clearSavedSession();
-        this.error.set('Your saved session has expired. Sign in again.');
+        if (this.hasSavedSession() && this.activeSession) {
+          this.cancelRetry();
+          await this.activateStoredSession(this.activeSession, true);
+        } else {
+          await this.clearSavedSession();
+          this.error.set('Your online session has expired. Sign in again.');
+        }
       } else {
         this.markUnavailable();
       }
@@ -432,6 +493,7 @@ export class MobileAuthService {
     this.authenticated.set(false);
     this.offlineMode.set(false);
     this.lockedForBackground.set(false);
+    this.onlineSignInRequired.set(false);
     delete window.__mobileAuth;
     delete window.__healthAuth;
   }

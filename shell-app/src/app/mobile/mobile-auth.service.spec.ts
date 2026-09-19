@@ -100,6 +100,48 @@ describe('MobileAuthService offline refresh', () => {
     expect(window.__mobileAuth).toBeUndefined();
   }));
 
+  it('revalidates immediately when native connectivity returns', fakeAsync(() => {
+    void auth.beginLogin('demo', 'password', true);
+    flushMicrotasks();
+    (auth as any).applyNetworkStatus(false);
+    expect(auth.authenticated()).toBeTrue();
+    expect(auth.offlineMode()).toBeTrue();
+
+    fetchSpy.and.resolveTo(response(200, { ...tokens, access_token: 'after-airplane-mode' }));
+    (auth as any).applyNetworkStatus(true);
+    flushMicrotasks();
+
+    expect(auth.authenticated()).toBeTrue();
+    expect(auth.offlineMode()).toBeFalse();
+    expect(window.__mobileAuth?.token).toBe('after-airplane-mode');
+  }));
+
+  it('keeps a remembered biometric session in read-only mode when refresh expires', fakeAsync(() => {
+    void auth.beginLogin('demo', 'password', true);
+    flushMicrotasks();
+    expect(auth.authenticated()).toBeTrue();
+    expect(auth.hasSavedSession()).toBeTrue();
+
+    fetchSpy.and.resolveTo(response(401));
+    auth.retryConnection();
+    flushMicrotasks();
+
+    expect(auth.authenticated()).toBeTrue();
+    expect(auth.hasSavedSession()).toBeTrue();
+    expect(auth.offlineMode()).toBeTrue();
+    expect(auth.onlineSignInRequired()).toBeTrue();
+    expect(window.__mobileAuth?.offline).toBeTrue();
+  }));
+
+  it('requests a Keycloak offline token during credential sign-in', fakeAsync(() => {
+    void auth.beginLogin('demo', 'password', true);
+    flushMicrotasks();
+
+    const options = fetchSpy.calls.first().args[1] as RequestInit;
+    const body = options.body as URLSearchParams;
+    expect(body.get('scope')).toBe('openid profile offline_access');
+  }));
+
   it('does not send overlapping reconnect requests', fakeAsync(() => {
     void auth.beginLogin('demo', 'password', false);
     flushMicrotasks();

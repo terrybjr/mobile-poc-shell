@@ -26,14 +26,18 @@
     <span class="online-dot" [class.offline]="!auth.online() || auth.offlineMode()"></span>
     <div>
       <strong>{{
-        auth.offlineMode()
+        auth.onlineSignInRequired()
+          ? 'Biometric access active'
+          : auth.offlineMode()
           ? auth.reconnecting()
             ? 'Reconnecting…'
             : 'Viewing saved information'
           : 'Connected'
       }}</strong
       ><small>{{
-        auth.offlineMode()
+        auth.onlineSignInRequired()
+          ? 'Saved information remains available. Sign in online to make changes.'
+          : auth.offlineMode()
           ? 'Your session stays open. Reconnect to save changes.'
           : 'You can refresh information and save changes.'
       }}</small>
@@ -41,11 +45,11 @@
     <button
       class="connection-retry"
       type="button"
-      (click)="auth.retryConnection()"
+      (click)="recoverConnection()"
       [disabled]="!auth.online() || auth.reconnecting()"
       [style.visibility]="auth.offlineMode() ? 'visible' : 'hidden'"
     >
-      Retry
+      {{ auth.onlineSignInRequired() ? 'Sign in' : 'Retry' }}
     </button>
   </section>
 
