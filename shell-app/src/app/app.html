@@ -1,7 +1,10 @@
 @if (mobileMode) {
-  @if (mobileAuth.authenticated()) {
-    <app-mobile-home />
-  } @else {
+  @if (mobileAuth.authenticated() || mobileAuth.lockedForBackground()) {
+    <div [hidden]="!mobileAuth.authenticated()" [attr.inert]="!mobileAuth.authenticated() ? '' : null">
+      <app-mobile-home />
+    </div>
+  }
+  @if (!mobileAuth.authenticated()) {
     <app-mobile-login />
   }
 } @else {

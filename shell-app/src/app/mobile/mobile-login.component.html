@@ -7,7 +7,7 @@
     <h1 id="login-title">Your Mobile<br /><span>Benefits Portal</span></h1>
     <p class="intro">Sign in directly to your private MyTRS mobile experience.</p>
 
-    @if (auth.hasSavedSession()) {
+    @if (auth.hasSavedSession() || auth.lockedForBackground()) {
       <button class="primary-action biometric-action" type="button" [disabled]="auth.busy()" (click)="unlock()">
         <span class="face-icon" aria-hidden="true">
           <svg viewBox="0 0 32 32" role="img" aria-label="Face ID">

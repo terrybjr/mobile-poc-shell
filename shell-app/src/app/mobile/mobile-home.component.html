@@ -1,49 +1,94 @@
 <main class="mobile-home">
   <header class="home-header">
-    <div class="mobile-brand"><span><strong>MyTRS</strong><small>MEMBER MOBILE</small></span></div>
-    <button type="button" class="sign-out" (click)="signOut()" aria-label="Sign out of MyTRS">Sign out</button>
+    <div class="mobile-brand">
+      <span><strong>MyTRS</strong><small>MEMBER MOBILE</small></span>
+    </div>
+    <button type="button" class="sign-out" (click)="signOut()" aria-label="Sign out of MyTRS">
+      Sign out
+    </button>
   </header>
 
   <section class="welcome">
     <p class="eyebrow">MEMBER HOME</p>
-    <h1>Hello, {{ pension().memberName }}</h1>
+    <h1>Hello, {{ auth.memberName() }}</h1>
     <p>Your benefit information is ready when you are.</p>
   </section>
 
-  <section class="online-card" aria-label="Connection status">
+  <section class="online-card" role="status" aria-live="polite" aria-atomic="true">
     <span class="online-dot" [class.offline]="!auth.online() || auth.offlineMode()"></span>
-    <div><strong>{{ auth.online() && !auth.offlineMode() ? 'You are online' : 'Offline mode' }}</strong><small>{{ auth.online() && !auth.offlineMode() ? 'Your member information is up to date.' : 'You can view saved information, but changes are unavailable until your session reconnects.' }}</small></div>
-    <span class="lock" aria-hidden="true">✓</span>
+    <div>
+      <strong>{{
+        auth.offlineMode()
+          ? auth.reconnecting()
+            ? 'Reconnecting…'
+            : 'Viewing saved information'
+          : 'Connected'
+      }}</strong
+      ><small>{{
+        auth.offlineMode()
+          ? 'Your session stays open. Reconnect to save changes.'
+          : 'You can refresh information and save changes.'
+      }}</small>
+    </div>
+    <button
+      class="connection-retry"
+      type="button"
+      (click)="auth.retryConnection()"
+      [disabled]="!auth.online() || auth.reconnecting()"
+      [style.visibility]="auth.offlineMode() ? 'visible' : 'hidden'"
+    >
+      Retry
+    </button>
   </section>
-
-  @if (!auth.online() || auth.offlineMode()) {
-    <section class="offline-notice" role="status">
-      <strong>Offline mode</strong>
-      <span>Saved member information, your ID card, and cached documents remain available. Updates and submissions are disabled.</span>
-    </section>
-  }
 
   @if (activeTab() === 'overview') {
-  <section class="member-card">
-    <div class="card-heading"><span>DIGITAL MEMBER ID</span><span class="verified">✓ SECURE</span></div>
-    <h2>{{ pension().memberName }}</h2>
-    <p>Teacher Retirement System</p>
-    <div class="member-grid"><div><small>MEMBER STATUS</small><strong>{{ pension().status }}</strong></div><div><small>TRS PARTICIPANT ID</small><strong>{{ pension().memberId }}</strong></div></div>
-    <button type="button" class="id-card-toggle" (click)="toggleIdCard()">{{ showIdCard() ? 'Hide ID card details' : 'View ID card details' }}</button>
-    @if (showIdCard()) {
-      <div class="id-card-details">
-        <span><small>MEMBER</small><strong>{{ pension().memberName }}</strong></span>
-        <span><small>PARTICIPANT ID</small><strong>{{ pension().memberId }}</strong></span>
-        <span><small>STATUS</small><strong>{{ pension().status }}</strong></span>
-      </div>
+    @if (pensionError()) {
+      <p class="offline-notice" role="status">{{ pensionError() }}</p>
     }
-  </section>
+    @if (hasPension()) {
+      <section class="member-card">
+        <div class="card-heading">
+          <span>DIGITAL MEMBER ID</span><span class="verified">✓ SECURE</span>
+        </div>
+        <h2>{{ pension().memberName }}</h2>
+        <p>Teacher Retirement System</p>
+        <div class="member-grid">
+          <div>
+            <small>MEMBER STATUS</small><strong>{{ pension().status }}</strong>
+          </div>
+          <div>
+            <small>TRS PARTICIPANT ID</small><strong>{{ pension().memberId }}</strong>
+          </div>
+        </div>
+        <button type="button" class="id-card-toggle" (click)="toggleIdCard()">
+          {{ showIdCard() ? 'Hide ID card details' : 'View ID card details' }}
+        </button>
+        @if (showIdCard()) {
+          <div class="id-card-details">
+            <span
+              ><small>MEMBER</small><strong>{{ pension().memberName }}</strong></span
+            >
+            <span
+              ><small>PARTICIPANT ID</small><strong>{{ pension().memberId }}</strong></span
+            >
+            <span
+              ><small>STATUS</small><strong>{{ pension().status }}</strong></span
+            >
+          </div>
+        }
+      </section>
+    }
+    <section class="hello-card" aria-labelledby="member-services-title">
+      <div>
+        <p class="eyebrow">MEMBER SERVICES</p>
+        <h2 id="member-services-title">Manage your benefits in one place.</h2>
+        <p>
+          Review your pension and health information, access documents, and contact TRS support.
+        </p>
+      </div>
+    </section>
 
-  <section class="hello-card" aria-labelledby="member-services-title">
-    <div><p class="eyebrow">MEMBER SERVICES</p><h2 id="member-services-title">Manage your benefits in one place.</h2><p>Review your pension and health information, access documents, and contact TRS support.</p></div>
-  </section>
-
-  <p class="mobile-footnote">Teacher Retirement System of Texas</p>
+    <p class="mobile-footnote">Teacher Retirement System of Texas</p>
   } @else if (activeTab() === 'pension') {
     <app-mobile-pension />
   } @else if (activeTab() === 'health') {
@@ -55,10 +100,45 @@
   }
 
   <nav class="mobile-toolbar" aria-label="Mobile member areas">
-    <button type="button" [class.active]="activeTab() === 'overview'" [attr.aria-current]="activeTab() === 'overview' ? 'page' : null" (click)="selectTab('overview')"><span aria-hidden="true">⌂</span><small>Home</small></button>
-    <button type="button" [class.active]="activeTab() === 'pension'" [attr.aria-current]="activeTab() === 'pension' ? 'page' : null" (click)="selectTab('pension')"><span aria-hidden="true">◇</span><small>Pension</small></button>
-    <button type="button" [class.active]="activeTab() === 'health'" [attr.aria-current]="activeTab() === 'health' ? 'page' : null" (click)="selectTab('health')"><span aria-hidden="true">♡</span><small>Health</small></button>
-    <button type="button" [class.active]="activeTab() === 'documents'" [attr.aria-current]="activeTab() === 'documents' ? 'page' : null" (click)="selectTab('documents')"><span aria-hidden="true">▤</span><small>Documents</small></button>
-    <button type="button" [class.active]="activeTab() === 'contact'" [attr.aria-current]="activeTab() === 'contact' ? 'page' : null" (click)="selectTab('contact')"><span aria-hidden="true">?</span><small>Contact Us</small></button>
+    <button
+      type="button"
+      [class.active]="activeTab() === 'overview'"
+      [attr.aria-current]="activeTab() === 'overview' ? 'page' : null"
+      (click)="selectTab('overview')"
+    >
+      <span aria-hidden="true">⌂</span><small>Home</small>
+    </button>
+    <button
+      type="button"
+      [class.active]="activeTab() === 'pension'"
+      [attr.aria-current]="activeTab() === 'pension' ? 'page' : null"
+      (click)="selectTab('pension')"
+    >
+      <span aria-hidden="true">◇</span><small>Pension</small>
+    </button>
+    <button
+      type="button"
+      [class.active]="activeTab() === 'health'"
+      [attr.aria-current]="activeTab() === 'health' ? 'page' : null"
+      (click)="selectTab('health')"
+    >
+      <span aria-hidden="true">♡</span><small>Health</small>
+    </button>
+    <button
+      type="button"
+      [class.active]="activeTab() === 'documents'"
+      [attr.aria-current]="activeTab() === 'documents' ? 'page' : null"
+      (click)="selectTab('documents')"
+    >
+      <span aria-hidden="true">▤</span><small>Documents</small>
+    </button>
+    <button
+      type="button"
+      [class.active]="activeTab() === 'contact'"
+      [attr.aria-current]="activeTab() === 'contact' ? 'page' : null"
+      (click)="selectTab('contact')"
+    >
+      <span aria-hidden="true">?</span><small>Contact Us</small>
+    </button>
   </nav>
 </main>

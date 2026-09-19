@@ -7,14 +7,17 @@
   height: 100dvh;
   max-height: 100dvh;
   min-height: 100dvh;
-  padding: calc(25px + env(safe-area-inset-top, 0px)) 20px calc(104px + env(safe-area-inset-bottom, 0px));
+  padding: calc(25px + env(safe-area-inset-top, 0px)) 20px
+    calc(104px + env(safe-area-inset-bottom, 0px));
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: none;
   scroll-padding-top: calc(25px + env(safe-area-inset-top, 0px));
   scroll-padding-bottom: calc(104px + env(safe-area-inset-bottom, 0px));
   color: #f4f8fb;
-  background: radial-gradient(circle at 90% 0, #285b80 0, transparent 42%), linear-gradient(155deg, #072846 0%, #0b3d62 58%, #0a2c49 100%);
+  background:
+    radial-gradient(circle at 90% 0, #285b80 0, transparent 42%),
+    linear-gradient(155deg, #072846 0%, #0b3d62 58%, #0a2c49 100%);
   -webkit-overflow-scrolling: touch;
 }
 
@@ -115,10 +118,14 @@
   line-height: 1.4;
 }
 
-.offline-notice strong { color: #ffd98c; font-size: 13px; }
+.offline-notice strong {
+  color: #ffd98c;
+  font-size: 13px;
+}
 
 .online-card > div {
   min-width: 0;
+  flex: 1;
 }
 
 .online-card strong,
@@ -132,11 +139,26 @@
 
 .online-card small {
   margin-top: 4px;
-  overflow: hidden;
   color: #a9c3d4;
   font-size: 11px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.4;
+  min-height: 4.2em;
+}
+
+.connection-retry {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 8px;
+  border: 1px solid #ffffff40;
+  border-radius: 10px;
+  color: #eaf3f7;
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+}
+
+.connection-retry:disabled {
+  opacity: 0.5;
 }
 
 .online-dot {
@@ -242,9 +264,18 @@
   border-top: 1px solid #0a34561c;
 }
 
-.id-card-details span { display: grid; gap: 3px; }
-.id-card-details small { color: #628397; font-size: 9px; letter-spacing: .8px; }
-.id-card-details strong { font-size: 13px; }
+.id-card-details span {
+  display: grid;
+  gap: 3px;
+}
+.id-card-details small {
+  color: #628397;
+  font-size: 9px;
+  letter-spacing: 0.8px;
+}
+.id-card-details strong {
+  font-size: 13px;
+}
 
 .hello-card {
   margin-top: 17px;

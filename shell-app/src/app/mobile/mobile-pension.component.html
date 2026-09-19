@@ -15,10 +15,6 @@
     </button>
   </div>
 
-  @if (!auth.online() || auth.offlineMode()) {
-    <p class="offline-notice" role="status"><strong>Offline mode</strong><span>You can view your saved pension information. Editing and restoring sample values are disabled until you reconnect.</span></p>
-  }
-
   @if (error()) {
     <p class="feature-error" role="alert">{{ error() }}</p>
   }

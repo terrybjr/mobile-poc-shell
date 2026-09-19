@@ -2,7 +2,15 @@ import { Capacitor } from '@capacitor/core';
 import { App } from '@capacitor/app';
 import { BiometricAuth, BiometryType } from '@aparajita/capacitor-biometric-auth';
 import { KeychainAccess, SecureStorage } from '@aparajita/capacitor-secure-storage';
-import { Injectable, signal } from '@angular/core';
+import { inject, Injectable, InjectionToken, signal } from '@angular/core';
+
+export const MOBILE_SECURE_STORAGE = new InjectionToken<typeof SecureStorage>(
+  'Mobile secure storage',
+  {
+    providedIn: 'root',
+    factory: () => SecureStorage,
+  },
+);
 
 interface TokenResponse {
   access_token: string;
@@ -36,6 +44,7 @@ const REFRESH_TIMEOUT_MS = 10_000;
 
 @Injectable({ providedIn: 'root' })
 export class MobileAuthService {
+  private readonly storage = inject(MOBILE_SECURE_STORAGE);
   readonly authenticated = signal(false);
   readonly initialized = signal(false);
   readonly busy = signal(false);
@@ -46,10 +55,17 @@ export class MobileAuthService {
   readonly online = signal(typeof navigator === 'undefined' ? true : navigator.onLine);
   readonly offlineMode = signal(false);
   readonly lockedForBackground = signal(false);
+  readonly reconnecting = signal(false);
+  readonly connectionRestored = signal(0);
   private biometricPromptActive = false;
   private revalidationInFlight = false;
+  private sessionGeneration = 0;
+  private activeSession: StoredSession | null = null;
+  private retryTimer?: number;
+  private retryDelay = 5_000;
 
   async initialize(): Promise<void> {
+    if (this.initialized()) return;
     if (!Capacitor.isNativePlatform()) {
       this.initialized.set(true);
       return;
@@ -61,7 +77,8 @@ export class MobileAuthService {
     });
     window.addEventListener('offline', () => {
       this.online.set(false);
-      if (this.authenticated()) this.offlineMode.set(true);
+      this.cancelRetry();
+      if (this.authenticated()) this.markUnavailable();
     });
 
     await App.addListener('appStateChange', ({ isActive }) => {
@@ -69,6 +86,8 @@ export class MobileAuthService {
         this.lockForBackground();
       } else if (this.lockedForBackground()) {
         this.error.set('Unlock with biometrics to continue.');
+      } else if (this.authenticated() && this.online()) {
+        void this.revalidateOnlineSession();
       }
     });
 
@@ -92,6 +111,13 @@ export class MobileAuthService {
   }
 
   async beginLogin(username: string, password: string, rememberDevice: boolean): Promise<void> {
+    const generation = ++this.sessionGeneration;
+    this.cancelRetry();
+    this.activeSession = null;
+    this.authenticated.set(false);
+    this.lockedForBackground.set(false);
+    delete window.__mobileAuth;
+    delete window.__healthAuth;
     this.error.set('');
     this.busy.set(true);
 
@@ -99,18 +125,22 @@ export class MobileAuthService {
       if (!username.trim() || !password) {
         throw new Error('Credentials are required.');
       }
-      const response = await fetch(`${KEYCLOAK_BASE}/realms/${REALM}/protocol/openid-connect/token`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          grant_type: 'password',
-          client_id: CLIENT_ID,
-          username: username.trim(),
-          password,
-          scope: 'openid profile'
-        })
-      });
+      const response = await fetch(
+        `${KEYCLOAK_BASE}/realms/${REALM}/protocol/openid-connect/token`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            grant_type: 'password',
+            client_id: CLIENT_ID,
+            username: username.trim(),
+            password,
+            scope: 'openid profile',
+          }),
+        },
+      );
       const tokens = (await response.json()) as TokenResponse & { error?: string };
+      if (generation !== this.sessionGeneration) return;
       if (!response.ok || !tokens.access_token) {
         const description = tokens.error_description ?? tokens.error;
         throw new Error(description ?? 'Direct mobile sign-in failed.');
@@ -122,7 +152,7 @@ export class MobileAuthService {
           await BiometricAuth.authenticate({
             reason: 'Enable Face ID to unlock your saved MyTRS session',
             allowDeviceCredential: true,
-            iosFallbackTitle: 'Use device passcode'
+            iosFallbackTitle: 'Use device passcode',
           });
         } catch {
           // The session remains active; biometric unlock can be enabled later.
@@ -131,6 +161,7 @@ export class MobileAuthService {
         }
       }
     } catch (error) {
+      if (generation !== this.sessionGeneration) return;
       const message = error instanceof Error ? error.message : '';
       this.error.set(message || 'The username or password could not be verified.');
       this.busy.set(false);
@@ -146,16 +177,17 @@ export class MobileAuthService {
         await BiometricAuth.authenticate({
           reason: 'Unlock your secure MyTRS mobile session',
           allowDeviceCredential: true,
-          iosFallbackTitle: 'Use device passcode'
+          iosFallbackTitle: 'Use device passcode',
         });
       } finally {
         this.biometricPromptActive = false;
       }
-      const saved = await this.readStoredSession();
+      const saved = this.activeSession ?? (await this.readStoredSession());
       if (!saved) {
         this.hasSavedSession.set(false);
         throw new Error('No saved session is available.');
       }
+      this.activeSession = saved;
       if (!this.online()) {
         await this.activateStoredSession(saved);
         return;
@@ -163,7 +195,7 @@ export class MobileAuthService {
 
       try {
         const tokens = await this.exchangeRefreshToken(saved.refreshToken);
-        await this.activateSession(tokens, saved.memberName, true);
+        await this.activateSession(tokens, saved.memberName, this.hasSavedSession());
       } catch (error) {
         // A temporary network outage must not turn a valid local biometric
         // unlock into a forced credential login. An invalid/revoked refresh
@@ -195,13 +227,44 @@ export class MobileAuthService {
   async logout(): Promise<void> {
     // Sign out clears the active access token but retains the opt-in refresh
     // token so the user can return through biometric unlock.
-    this.hasSavedSession.set((await this.readStoredSession()) !== null);
+    this.sessionGeneration++;
+    this.cancelRetry();
+    this.activeSession = null;
     this.authenticated.set(false);
     this.offlineMode.set(false);
     this.lockedForBackground.set(false);
     delete window.__mobileAuth;
     delete window.__healthAuth;
     this.error.set('');
+    this.busy.set(false);
+    this.hasSavedSession.set((await this.readStoredSession()) !== null);
+  }
+
+  /** Network availability never determines whether the member is authenticated. */
+  markUnavailable(): void {
+    if (!this.authenticated()) return;
+    this.offlineMode.set(true);
+    if (window.__mobileAuth) window.__mobileAuth.offline = true;
+    this.scheduleRetry();
+  }
+
+  retryConnection(): void {
+    if (this.authenticated() && this.online()) void this.revalidateOnlineSession();
+  }
+
+  private cancelRetry(): void {
+    window.clearTimeout(this.retryTimer);
+    this.retryTimer = undefined;
+  }
+
+  private scheduleRetry(delay?: number): void {
+    this.cancelRetry();
+    if (!this.authenticated() || !this.online()) return;
+    this.retryTimer = window.setTimeout(
+      () => void this.revalidateOnlineSession(),
+      delay ?? this.retryDelay,
+    );
+    if (delay === undefined) this.retryDelay = Math.min(this.retryDelay * 2, 60_000);
   }
 
   private async exchangeRefreshToken(refreshToken: string): Promise<TokenResponse> {
@@ -212,15 +275,26 @@ export class MobileAuthService {
       response = await fetch(`${KEYCLOAK_BASE}/realms/${REALM}/protocol/openid-connect/token`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({ grant_type: 'refresh_token', client_id: CLIENT_ID, refresh_token: refreshToken }),
+        body: new URLSearchParams({
+          grant_type: 'refresh_token',
+          client_id: CLIENT_ID,
+          refresh_token: refreshToken,
+        }),
         signal: controller.signal,
       });
     } catch {
+      window.clearTimeout(timeout);
       throw new NetworkAuthError('Refresh could not reach the identity provider.');
+    }
+
+    try {
+      return await this.parseRefreshResponse(response);
     } finally {
       window.clearTimeout(timeout);
     }
+  }
 
+  private async parseRefreshResponse(response: Response): Promise<TokenResponse> {
     if (refreshResponseRequiresSignIn(response.status)) {
       throw new InvalidSessionError('Refresh session is no longer valid.');
     }
@@ -240,43 +314,66 @@ export class MobileAuthService {
     return tokens;
   }
 
-  private async activateSession(tokens: TokenResponse, fallbackName: string, save: boolean): Promise<void> {
+  private async activateSession(
+    tokens: TokenResponse,
+    fallbackName: string,
+    save: boolean,
+  ): Promise<void> {
+    const generation = this.sessionGeneration;
+    const wasOffline = this.offlineMode();
     if (!tokens.access_token) {
       throw new Error('Missing access token.');
     }
     const name = this.claimMemberName(tokens.id_token) || fallbackName || 'Jordan Davis';
+    this.activeSession = {
+      refreshToken: tokens.refresh_token ?? this.activeSession?.refreshToken ?? '',
+      memberName: name,
+      accessToken: tokens.access_token,
+      tokenType: tokens.token_type ?? 'Bearer',
+    };
     this.memberName.set(name);
-    const snapshot = { authenticated: true, token: tokens.access_token, tokenType: tokens.token_type ?? 'Bearer', expiresIn: tokens.expires_in ?? 0, offline: false };
+    const snapshot = {
+      authenticated: true,
+      token: tokens.access_token,
+      tokenType: tokens.token_type ?? 'Bearer',
+      expiresIn: tokens.expires_in ?? 0,
+      offline: !this.online(),
+    };
     window.__mobileAuth = snapshot;
     window.__healthAuth = { authenticated: true, token: tokens.access_token };
     window.dispatchEvent(new Event('health-auth-ready'));
 
-    if (save && tokens.refresh_token) {
+    if (save && this.activeSession.refreshToken) {
       const session: StoredSession = {
-        refreshToken: tokens.refresh_token,
+        refreshToken: this.activeSession.refreshToken,
         memberName: name,
         accessToken: tokens.access_token,
-        tokenType: tokens.token_type ?? 'Bearer'
+        tokenType: tokens.token_type ?? 'Bearer',
       };
-      await SecureStorage.set(
+      await this.storage.set(
         SESSION_KEY,
         JSON.stringify(session),
         false,
         false,
-        KeychainAccess.whenPasscodeSetThisDeviceOnly
+        KeychainAccess.whenPasscodeSetThisDeviceOnly,
       );
       this.hasSavedSession.set(true);
     } else if (!save) {
-      await SecureStorage.remove(SESSION_KEY).catch(() => false);
+      await this.storage.remove(SESSION_KEY).catch(() => false);
       this.hasSavedSession.set(false);
     }
-    this.offlineMode.set(false);
+    if (generation !== this.sessionGeneration) return;
+    this.offlineMode.set(!this.online());
     this.lockedForBackground.set(false);
     this.authenticated.set(true);
     this.busy.set(false);
+    if (wasOffline && this.online()) this.connectionRestored.update((value) => value + 1);
+    this.retryDelay = 5_000;
+    this.scheduleRetry(Math.max(10_000, ((tokens.expires_in || 60) - 30) * 1_000));
   }
 
   private async activateStoredSession(saved: StoredSession): Promise<void> {
+    this.activeSession = saved;
     const name = saved.memberName || 'Jordan Davis';
     this.memberName.set(name);
     window.__mobileAuth = {
@@ -284,7 +381,7 @@ export class MobileAuthService {
       token: saved.accessToken ?? '',
       tokenType: saved.tokenType ?? 'Bearer',
       expiresIn: 0,
-      offline: true
+      offline: true,
     };
     window.__healthAuth = { authenticated: true, token: saved.accessToken ?? '' };
     window.dispatchEvent(new Event('health-auth-ready'));
@@ -292,34 +389,45 @@ export class MobileAuthService {
     this.lockedForBackground.set(false);
     this.authenticated.set(true);
     this.busy.set(false);
+    this.scheduleRetry();
   }
 
   private async revalidateOnlineSession(): Promise<void> {
-    if (this.revalidationInFlight) return;
+    if (this.revalidationInFlight || !this.authenticated() || !this.online()) return;
     this.revalidationInFlight = true;
+    this.reconnecting.set(true);
+    const generation = this.sessionGeneration;
 
-    const saved = await this.readStoredSession();
     try {
-      if (!saved) {
-        this.offlineMode.set(false);
+      const saved = this.activeSession ?? (await this.readStoredSession());
+      if (generation !== this.sessionGeneration || !this.authenticated()) return;
+      if (!saved?.refreshToken) {
+        this.markUnavailable();
         return;
       }
       const tokens = await this.exchangeRefreshToken(saved.refreshToken);
-      await this.activateSession(tokens, saved.memberName, true);
+      if (generation !== this.sessionGeneration || !this.authenticated()) return;
+      await this.activateSession(tokens, saved.memberName, this.hasSavedSession());
     } catch (error) {
+      if (generation !== this.sessionGeneration || !this.authenticated()) return;
       if (error instanceof InvalidSessionError) {
         await this.clearSavedSession();
         this.error.set('Your saved session has expired. Sign in again.');
+      } else {
+        this.markUnavailable();
       }
-      // Keep the read-only offline session for transient network and server
-      // failures. A later online event can retry the refresh naturally.
+      // Transient failures retain the session and retry with bounded backoff.
     } finally {
       this.revalidationInFlight = false;
+      this.reconnecting.set(false);
     }
   }
 
   private async clearSavedSession(): Promise<void> {
-    await SecureStorage.remove(SESSION_KEY).catch(() => false);
+    this.sessionGeneration++;
+    this.cancelRetry();
+    this.activeSession = null;
+    await this.storage.remove(SESSION_KEY).catch(() => false);
     this.hasSavedSession.set(false);
     this.authenticated.set(false);
     this.offlineMode.set(false);
@@ -329,8 +437,11 @@ export class MobileAuthService {
   }
 
   private lockForBackground(): void {
-    if (!Capacitor.isNativePlatform() || this.biometricPromptActive || !this.authenticated()) return;
+    if (!Capacitor.isNativePlatform() || this.biometricPromptActive || !this.authenticated())
+      return;
 
+    this.sessionGeneration++;
+    this.cancelRetry();
     this.authenticated.set(false);
     this.offlineMode.set(false);
     this.lockedForBackground.set(true);
@@ -340,7 +451,7 @@ export class MobileAuthService {
 
   private async readStoredSession(): Promise<StoredSession | null> {
     try {
-      const value = await SecureStorage.get(SESSION_KEY);
+      const value = await this.storage.get(SESSION_KEY);
       if (typeof value === 'string') {
         return JSON.parse(value) as StoredSession;
       }
@@ -356,11 +467,13 @@ export class MobileAuthService {
     }
     try {
       const payload = idToken.split('.')[1];
-      const claims = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/'))) as { name?: string; preferred_username?: string };
+      const claims = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/'))) as {
+        name?: string;
+        preferred_username?: string;
+      };
       return claims.name || claims.preferred_username || '';
     } catch {
       return '';
     }
   }
-
 }

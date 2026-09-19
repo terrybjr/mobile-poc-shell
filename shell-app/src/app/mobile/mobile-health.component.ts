@@ -1,7 +1,8 @@
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Capacitor } from '@capacitor/core';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CapacitorPluginMlKitTextRecognition } from '@pantrist/capacitor-plugin-ml-kit-text-recognition';
 import { MobileVisionTextRecognition } from './mobile-vision-text-recognition';
@@ -126,6 +127,7 @@ const API_BASE = 'https://brianthedeveloper.com';
 })
 export class MobileHealthComponent implements OnInit {
   private readonly http = inject(HttpClient);
+  private readonly destroyRef = inject(DestroyRef);
   protected readonly auth = inject(MobileAuthService);
   private readonly cache = inject(MobileOfflineCacheService);
 
@@ -173,7 +175,7 @@ export class MobileHealthComponent implements OnInit {
   }
 
   protected refresh(): void {
-    this.load();
+    if (this.canMutate() && !this.loading()) this.load();
   }
 
   protected resetDemo(): void {
@@ -194,6 +196,7 @@ export class MobileHealthComponent implements OnInit {
         `${API_BASE}/mobile-poc/wss-apps/health-ws/api/health`,
         this.options(token),
       )
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (data) => {
           this.apply(data);
@@ -257,8 +260,10 @@ export class MobileHealthComponent implements OnInit {
   }
 
   protected selectAction(action: string): void {
-    if (!this.canMutate()) {
-      this.actionMessage.set('You are offline. Updates and submissions are disabled until you reconnect.');
+    if (!this.canMutate() && !action.includes('MBI')) {
+      this.actionMessage.set(
+        'You are offline. Updates and submissions are disabled until you reconnect.',
+      );
       return;
     }
     if (action.includes('Initial Enrollment')) {
@@ -277,7 +282,9 @@ export class MobileHealthComponent implements OnInit {
 
   protected beginEnrollment(): void {
     if (!this.canMutate()) {
-      this.enrollmentError.set('You are offline. Enrollment changes are disabled until you reconnect.');
+      this.enrollmentError.set(
+        'You are offline. Enrollment changes are disabled until you reconnect.',
+      );
       return;
     }
     const token = window.__mobileAuth?.token;
@@ -297,6 +304,7 @@ export class MobileHealthComponent implements OnInit {
         `${API_BASE}/mobile-poc/wss-apps/health-ws/api/health/enrollment`,
         this.options(token),
       )
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (draft) => {
           this.enrollmentLoading.set(false);
@@ -333,6 +341,7 @@ export class MobileHealthComponent implements OnInit {
         {},
         this.options(token),
       )
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (draft) => {
           this.enrollment = { ...draft };
@@ -414,6 +423,7 @@ export class MobileHealthComponent implements OnInit {
         `${API_BASE}/mobile-poc/wss-apps/health-ws/api/health/enrollment`,
         this.options(token),
       )
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (draft) => {
           this.enrollment = draft ? { ...draft } : null;
@@ -502,10 +512,7 @@ export class MobileHealthComponent implements OnInit {
   }
 
   private restoreEnrollmentProgress(currentStep: number): void {
-    const normalizedStep = Math.min(
-      this.enrollmentSteps.length,
-      Math.max(1, currentStep || 1),
-    );
+    const normalizedStep = Math.min(this.enrollmentSteps.length, Math.max(1, currentStep || 1));
     this.enrollmentStep.set(normalizedStep);
     this.highestCompletedEnrollmentStep.set(Math.max(0, normalizedStep - 1));
   }
@@ -553,7 +560,9 @@ export class MobileHealthComponent implements OnInit {
 
   protected submitEnrollment(): void {
     if (!this.canMutate()) {
-      this.enrollmentError.set('You are offline. Enrollment submission is disabled until you reconnect.');
+      this.enrollmentError.set(
+        'You are offline. Enrollment submission is disabled until you reconnect.',
+      );
       return;
     }
     const token = window.__mobileAuth?.token;
@@ -578,6 +587,7 @@ export class MobileHealthComponent implements OnInit {
         {},
         this.options(token),
       )
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (draft) => {
           this.enrollment = { ...draft };
@@ -715,6 +725,7 @@ export class MobileHealthComponent implements OnInit {
         this.enrollment,
         this.options(token),
       )
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (draft) => {
           this.enrollment = { ...draft };
@@ -760,9 +771,12 @@ export class MobileHealthComponent implements OnInit {
     this.mbiSaved.set(false);
     this.mbiError.set('');
     this.http
-      .put<
-        MbiRecord[]
-      >(`${API_BASE}/mobile-poc/wss-apps/health-ws/api/health/mbi`, this.draftMbiRecords, this.options(token))
+      .put<MbiRecord[]>(
+        `${API_BASE}/mobile-poc/wss-apps/health-ws/api/health/mbi`,
+        this.draftMbiRecords,
+        this.options(token),
+      )
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (data) => {
           this.draftMbiRecords = data.map((record) => ({ ...record }));
@@ -939,6 +953,7 @@ export class MobileHealthComponent implements OnInit {
       this.cache.read<MbiRecord[]>('health-mbi'),
       this.cache.read<EnrollmentDraft | null>('health-enrollment'),
     ]);
+    if (this.destroyRef.destroyed) return;
     if (cachedHealth) this.apply(cachedHealth);
     if (cachedMbi) this.draftMbiRecords = cachedMbi.map((record) => ({ ...record }));
     if (cachedEnrollment) this.enrollment = { ...cachedEnrollment };
@@ -948,7 +963,8 @@ export class MobileHealthComponent implements OnInit {
     this.error.set('');
 
     if (!token || !this.auth.online() || this.auth.offlineMode()) {
-      if (!cachedHealth) this.error.set('Offline. Health information has not been cached on this device yet.');
+      if (!cachedHealth)
+        this.error.set('Offline. Health information has not been cached on this device yet.');
       this.loading.set(false);
       return;
     }
@@ -960,6 +976,7 @@ export class MobileHealthComponent implements OnInit {
         `${API_BASE}/mobile-poc/wss-apps/health-ws/api/health`,
         this.options(token),
       )
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (data) => {
           this.apply(data);
@@ -976,9 +993,11 @@ export class MobileHealthComponent implements OnInit {
 
   private loadMbi(token: string): void {
     this.http
-      .get<
-        MbiRecord[]
-      >(`${API_BASE}/mobile-poc/wss-apps/health-ws/api/health/mbi`, this.options(token))
+      .get<MbiRecord[]>(
+        `${API_BASE}/mobile-poc/wss-apps/health-ws/api/health/mbi`,
+        this.options(token),
+      )
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (data) => {
           this.draftMbiRecords = data.map((record) => ({ ...record }));
@@ -1000,13 +1019,14 @@ export class MobileHealthComponent implements OnInit {
         `${API_BASE}/mobile-poc/wss-apps/health-ws/api/health/enrollment`,
         this.options(token),
       )
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (draft) => {
           this.enrollment = draft ? { ...draft } : null;
           void this.cache.write('health-enrollment', this.enrollment);
         },
         error: () => {
-          this.enrollment = null;
+          /* Retain the last loaded enrollment during an outage. */
         },
       });
   }
@@ -1034,7 +1054,7 @@ export class MobileHealthComponent implements OnInit {
     if (error instanceof HttpErrorResponse && (error.status === 401 || error.status === 403))
       return `Health API rejected the mobile session (HTTP ${error.status}).`;
     if (error instanceof HttpErrorResponse && error.status === 0)
-      return 'Health API could not be reached. Check the API deployment or CORS configuration.';
+      return 'Unable to refresh right now. Previously loaded information is still available.';
     return error instanceof HttpErrorResponse && error.status > 0
       ? `Health API returned HTTP ${error.status}.`
       : 'Health data is temporarily unavailable.';
@@ -1044,7 +1064,7 @@ export class MobileHealthComponent implements OnInit {
     if (error instanceof HttpErrorResponse && (error.status === 401 || error.status === 403))
       return `Health API rejected the mobile session (HTTP ${error.status}).`;
     if (error instanceof HttpErrorResponse && error.status === 0)
-      return 'Health API could not be reached. Check the API deployment or CORS configuration.';
+      return 'We could not confirm this update. Your entries are still here; reconnect and check before submitting again.';
     return error instanceof HttpErrorResponse && error.status > 0
       ? `Health API returned HTTP ${error.status}.`
       : 'Health information could not be updated.';

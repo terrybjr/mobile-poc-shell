@@ -1,5 +1,15 @@
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { HttpClient } from '@angular/common/http';
-import { Component, ElementRef, inject, OnInit, signal } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  ElementRef,
+  effect,
+  inject,
+  OnInit,
+  signal,
+  untracked,
+} from '@angular/core';
 import { MobileAuthService } from './mobile-auth.service';
 import { MobileOfflineCacheService } from './mobile-offline-cache.service';
 import { MobileHealthComponent } from './mobile-health.component';
@@ -18,50 +28,88 @@ const API_BASE = 'https://brianthedeveloper.com';
 
 @Component({
   selector: 'app-mobile-home',
-  imports: [MobileHealthComponent, MobilePensionComponent, MobileDocumentsComponent, MobileContactComponent],
+  imports: [
+    MobileHealthComponent,
+    MobilePensionComponent,
+    MobileDocumentsComponent,
+    MobileContactComponent,
+  ],
   templateUrl: './mobile-home.component.html',
-  styleUrls: ['./mobile-home.component.css', './mobile-toolbar.css']
+  styleUrls: ['./mobile-home.component.css', './mobile-toolbar.css'],
 })
 export class MobileHomeComponent implements OnInit {
   private readonly elementRef = inject(ElementRef<HTMLElement>);
   protected readonly auth = inject(MobileAuthService);
   private readonly http = inject(HttpClient);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly cache = inject(MobileOfflineCacheService);
   protected readonly activeTab = signal<MobileTab>('overview');
   protected readonly showIdCard = signal(false);
   protected readonly pensionLoading = signal(true);
   protected readonly pensionError = signal('');
+  protected readonly hasPension = signal(false);
   protected readonly pension = signal<PensionSummary>({
-    memberName: 'Jordan Davis', memberId: 'TRS-2048-117', status: 'Active'
+    memberName: 'Jordan Davis',
+    memberId: 'TRS-2048-117',
+    status: 'Active',
   });
 
   ngOnInit(): void {
     void this.loadPension();
   }
 
-  private async loadPension(): Promise<void> {
-    const cached = await this.cache.read<PensionSummary>('home-pension');
-    if (cached) this.pension.set(cached);
-
-    const token = window.__mobileAuth?.token;
-    if (!token || !this.auth.online() || this.auth.offlineMode()) {
-      if (!cached) this.pensionError.set('Offline. Member details have not been cached on this device yet.');
-      this.pensionLoading.set(false);
-      return;
-    }
-    this.http.get<PensionSummary>(`${API_BASE}/pension/api/pension`, {
-      headers: { Authorization: `Bearer ${token}` }
-    }).subscribe({
-      next: data => { this.pension.set(data); void this.cache.write('home-pension', data); this.pensionLoading.set(false); },
-      error: () => { this.pensionError.set('Pension member details are temporarily unavailable.'); this.pensionLoading.set(false); }
+  constructor() {
+    effect(() => {
+      if (this.auth.connectionRestored() > 0) {
+        untracked(() => void this.loadPension());
+      }
     });
   }
 
-  protected toggleIdCard(): void { this.showIdCard.update((visible) => !visible); }
+  private async loadPension(): Promise<void> {
+    this.pensionError.set('');
+    const cached = await this.cache.read<PensionSummary>('home-pension');
+    if (this.destroyRef.destroyed) return;
+    if (cached) {
+      this.pension.set(cached);
+      this.hasPension.set(true);
+    }
+
+    const token = window.__mobileAuth?.token;
+    if (!token || !this.auth.online() || this.auth.offlineMode()) {
+      if (!cached)
+        this.pensionError.set('Offline. Member details have not been cached on this device yet.');
+      this.pensionLoading.set(false);
+      return;
+    }
+    this.http
+      .get<PensionSummary>(`${API_BASE}/pension/api/pension`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (data) => {
+          this.pension.set(data);
+          this.hasPension.set(true);
+          void this.cache.write('home-pension', data);
+          this.pensionLoading.set(false);
+        },
+        error: () => {
+          this.pensionError.set('Pension member details are temporarily unavailable.');
+          this.pensionLoading.set(false);
+        },
+      });
+  }
+
+  protected toggleIdCard(): void {
+    this.showIdCard.update((visible) => !visible);
+  }
 
   selectTab(tab: MobileTab): void {
     this.activeTab.set(tab);
-    const mobileHome = this.elementRef.nativeElement.querySelector('.mobile-home') as HTMLElement | null;
+    const mobileHome = this.elementRef.nativeElement.querySelector(
+      '.mobile-home',
+    ) as HTMLElement | null;
     mobileHome?.scrollTo({ top: 0, behavior: 'auto' });
   }
 

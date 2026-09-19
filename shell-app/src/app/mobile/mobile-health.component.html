@@ -13,7 +13,7 @@
         type="button"
         class="quiet-button"
         (click)="refresh()"
-        [disabled]="loading() || busy()"
+        [disabled]="loading() || busy() || !canMutate()"
         [attr.aria-label]="loading() ? 'Loading Health data' : 'Refresh Health data'"
       >
         {{ loading() ? 'Loading…' : 'Refresh' }}
@@ -22,10 +22,6 @@
 
     @if (error()) {
       <p class="feature-error" role="alert">{{ error() }}</p>
-    }
-
-    @if (!auth.online() || auth.offlineMode()) {
-      <p class="offline-notice" role="status"><strong>Offline mode</strong><span>You can review saved coverage and Medicare information. Enrollment, MBI submissions, and other changes are disabled until you reconnect.</span></p>
     }
 
     <section class="mobile-welcome" aria-labelledby="health-actions-title">
@@ -55,7 +51,7 @@
         type="button"
         class="mobile-action-card"
         (click)="selectAction('Submit Medicare Beneficiary Identifier (MBI)')"
-        [disabled]="loading() || !draftMbiRecords.length || !canMutate()"
+        [disabled]="loading() || !draftMbiRecords.length"
         aria-describedby="mbi-action-description"
       >
         <span>
