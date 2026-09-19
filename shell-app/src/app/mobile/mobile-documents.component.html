@@ -1,28 +1,50 @@
-<main class="mobile-documents">
-  <section class="documents-intro">
+<section class="mobile-documents" aria-labelledby="documents-title">
+  <header class="documents-intro">
     <p class="eyebrow">MEMBER RECORDS</p>
-    <h1>Document Center</h1>
-    <p>Your statements and member notices in one place.</p>
-  </section>
-
-  <section class="documents-card" aria-labelledby="documents-card-title">
-    <div class="card-heading"><span id="documents-card-title">DOCUMENT CENTER</span><span class="document-count">8 DOCUMENTS</span></div>
-    <p class="documents-note">Your statements and notices are listed below. These saved document records remain available offline; new documents require a connection.</p>
-    <div class="document-table-wrap">
-      <table>
-        <thead><tr><th scope="col">Document</th><th scope="col">Generated</th><th scope="col"><span class="sr-only">Action</span></th></tr></thead>
-        <tbody>
-          <tr><td>Verification of Postal Service Address Change</td><td>06/22/2026</td><td><button type="button" aria-label="View Verification of Postal Service Address Change">View</button></td></tr>
-          <tr><td>Annual Statement of Your Member Account</td><td>10/03/2025</td><td><button type="button" aria-label="View Annual Statement dated October 3, 2025">View</button></td></tr>
-          <tr><td>Annual Statement of Your Member Account</td><td>10/04/2024</td><td><button type="button" aria-label="View Annual Statement dated October 4, 2024">View</button></td></tr>
-          <tr><td>Annual Statement of Your Member Account</td><td>10/03/2023</td><td><button type="button" aria-label="View Annual Statement dated October 3, 2023">View</button></td></tr>
-          <tr><td>Follow Up Notification to Existing TRS Member</td><td>05/31/2022</td><td><button type="button" aria-label="View Follow Up Notification to Existing TRS Member">View</button></td></tr>
-          <tr><td>Annual Statement of Your Member Account</td><td>10/10/2021</td><td><button type="button" aria-label="View Annual Statement dated October 10, 2021">View</button></td></tr>
-          <tr><td>Generate New Member Beneficiary Form</td><td>11/19/2019</td><td><button type="button" aria-label="View Generate New Member Beneficiary Form">View</button></td></tr>
-          <tr><td>Generate New Member Welcome Letter</td><td>09/18/2019</td><td><button type="button" aria-label="View Generate New Member Welcome Letter">View</button></td></tr>
-        </tbody>
-      </table>
+    <h1 id="documents-title">Documents</h1>
+    <p>Your statements and member notices.</p>
+  </header>
+  <section class="documents-card" aria-labelledby="documents-list-title">
+    <div class="card-heading">
+      <h2 id="documents-list-title">Member documents</h2>
+      <span class="document-count">8 records</span>
     </div>
+    <p class="documents-note">
+      Sample records are available offline. Document previews are not available in this demo.
+    </p>
+    <ul class="document-list">
+      <li>
+        <strong>Verification of Postal Service Address Change</strong>
+        <span>Generated <time datetime="2026-06-22">06/22/2026</time></span>
+      </li>
+      <li>
+        <strong>Annual Statement of Your Member Account</strong>
+        <span>Generated <time datetime="2025-10-03">10/03/2025</time></span>
+      </li>
+      <li>
+        <strong>Annual Statement of Your Member Account</strong>
+        <span>Generated <time datetime="2024-10-04">10/04/2024</time></span>
+      </li>
+      <li>
+        <strong>Annual Statement of Your Member Account</strong>
+        <span>Generated <time datetime="2023-10-03">10/03/2023</time></span>
+      </li>
+      <li>
+        <strong>Follow Up Notification to Existing TRS Member</strong>
+        <span>Generated <time datetime="2022-05-31">05/31/2022</time></span>
+      </li>
+      <li>
+        <strong>Annual Statement of Your Member Account</strong>
+        <span>Generated <time datetime="2021-10-10">10/10/2021</time></span>
+      </li>
+      <li>
+        <strong>Generate New Member Beneficiary Form</strong>
+        <span>Generated <time datetime="2019-11-19">11/19/2019</time></span>
+      </li>
+      <li>
+        <strong>Generate New Member Welcome Letter</strong>
+        <span>Generated <time datetime="2019-09-18">09/18/2019</time></span>
+      </li>
+    </ul>
   </section>
-
-</main>
+</section>

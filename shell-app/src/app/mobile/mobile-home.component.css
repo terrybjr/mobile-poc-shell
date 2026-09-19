@@ -14,10 +14,8 @@
   overscroll-behavior: none;
   scroll-padding-top: calc(25px + env(safe-area-inset-top, 0px));
   scroll-padding-bottom: calc(104px + env(safe-area-inset-bottom, 0px));
-  color: #f4f8fb;
-  background:
-    radial-gradient(circle at 90% 0, #285b80 0, transparent 42%),
-    linear-gradient(155deg, #072846 0%, #0b3d62 58%, #0a2c49 100%);
+  color: var(--m-text);
+  background: var(--m-surface);
   -webkit-overflow-scrolling: touch;
 }
 
@@ -28,6 +26,10 @@
   max-width: 520px;
   min-height: 44px;
   margin: 0 auto;
+  padding: 18px;
+  border-radius: 12px;
+  color: var(--m-white);
+  background: var(--m-blue);
 }
 
 .mobile-brand {
@@ -44,20 +46,20 @@
 .mobile-brand small {
   display: block;
   margin-top: 5px;
-  color: #a9c3d4;
-  font-size: 8px;
+  color: #e4edf1;
+  font-size: 10px;
   letter-spacing: 1.5px;
 }
 
 .sign-out {
   min-height: 44px;
-  border: 1px solid #ffffff35;
+  border: 1px solid var(--m-border);
   border-radius: 99px;
   padding: 8px 14px;
-  color: #c1d3df;
+  color: var(--m-white);
   background: transparent;
   font: inherit;
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .welcome,
@@ -70,13 +72,13 @@
 }
 
 .welcome {
-  padding: 58px 2px 22px;
+  padding: 28px 2px 22px;
 }
 
 .eyebrow {
   margin: 0 0 9px;
-  color: #86c3a0;
-  font-size: 10px;
+  color: var(--m-teal);
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: 1.7px;
 }
@@ -84,13 +86,13 @@
 .welcome h1 {
   margin: 0;
   font-size: clamp(30px, 8vw, 42px);
-  letter-spacing: -0.04em;
+  letter-spacing: -0.02em;
   line-height: 1.05;
 }
 
 .welcome > p:last-child {
   margin: 12px 0 0;
-  color: #b8cedc;
+  color: var(--m-muted);
   font-size: 15px;
 }
 
@@ -99,9 +101,37 @@
   align-items: center;
   gap: 12px;
   padding: 15px;
-  border: 1px solid #ffffff20;
-  border-radius: 15px;
-  background: #ffffff0e;
+  border: 1px solid var(--m-border);
+  border-radius: 12px;
+  background: #eaf1f5;
+  border-left: 4px solid var(--m-blue);
+  margin-top: 20px;
+}
+
+.online-card.offline {
+  border-left-color: var(--m-warning);
+  background: var(--m-warning-bg);
+}
+
+.home-actions {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.home-actions button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 48px;
+  padding: 12px 14px;
+  border: 1px solid var(--m-border);
+  border-radius: 8px;
+  color: var(--m-blue);
+  background: var(--m-white);
+  font: inherit;
+  font-weight: 700;
+  text-align: left;
 }
 
 .offline-notice {
@@ -110,16 +140,16 @@
   max-width: 520px;
   margin: 12px auto 0;
   padding: 12px 14px;
-  border: 1px solid #edbd6880;
+  border: 1px solid var(--m-warning-border);
   border-radius: 12px;
-  color: #f6e0b2;
-  background: #7b572533;
-  font-size: 12px;
+  color: var(--m-warning);
+  background: var(--m-warning-bg);
+  font-size: 14px;
   line-height: 1.4;
 }
 
 .offline-notice strong {
-  color: #ffd98c;
+  color: var(--m-warning);
   font-size: 13px;
 }
 
@@ -139,22 +169,22 @@
 
 .online-card small {
   margin-top: 4px;
-  color: #a9c3d4;
-  font-size: 11px;
-  line-height: 1.4;
-  min-height: 4.2em;
+  color: var(--m-muted);
+  font-size: 13px;
+  line-height: 1.5;
+  min-height: 3em;
 }
 
 .connection-retry {
   min-width: 44px;
   min-height: 44px;
   padding: 8px;
-  border: 1px solid #ffffff40;
+  border: 1px solid var(--m-border);
   border-radius: 10px;
-  color: #eaf3f7;
+  color: var(--m-text);
   background: transparent;
   font: inherit;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .connection-retry:disabled {
@@ -166,8 +196,8 @@
   height: 10px;
   flex: 0 0 10px;
   border-radius: 50%;
-  background: #73d69b;
-  box-shadow: 0 0 0 5px #73d69b24;
+  background: var(--m-teal);
+  box-shadow: 0 0 0 5px var(--m-soft);
 }
 
 .online-dot.offline {
@@ -177,32 +207,33 @@
 
 .lock {
   margin-left: auto;
-  color: #86c3a0;
+  color: var(--m-teal);
   font-size: 17px;
 }
 
 .member-card {
   margin-top: 17px;
   padding: 20px;
-  border: 1px solid #ffffff25;
-  border-radius: 18px;
-  color: #0a3456;
-  background: linear-gradient(135deg, #f6fbfc 0%, #dcecee 100%);
-  box-shadow: 0 16px 35px #02172538;
+  border: 1px solid var(--m-border);
+  border-radius: 12px;
+  color: var(--m-blue);
+  background: var(--m-surface);
+  box-shadow: 0 16px 35px #163f5312;
+  border-top: 5px solid var(--m-blue);
 }
 
 .card-heading {
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  color: #34718a;
-  font-size: 10px;
+  color: var(--m-blue);
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: 1px;
 }
 
 .verified {
-  color: #28714d;
+  color: var(--m-teal);
   white-space: nowrap;
 }
 
@@ -214,7 +245,7 @@
 
 .member-card > p {
   margin: 0;
-  color: #537188;
+  color: var(--m-muted);
   font-size: 13px;
 }
 
@@ -224,7 +255,7 @@
   gap: 12px;
   margin-top: 24px;
   padding-top: 15px;
-  border-top: 1px solid #0a34561c;
+  border-top: 1px solid var(--m-border);
 }
 
 .member-grid small,
@@ -233,8 +264,8 @@
 }
 
 .member-grid small {
-  color: #628397;
-  font-size: 9px;
+  color: var(--m-muted);
+  font-size: 11px;
   letter-spacing: 0.8px;
 }
 
@@ -247,12 +278,12 @@
   width: 100%;
   margin-top: 18px;
   padding: 11px 12px;
-  border: 1px solid #0a34564d;
+  border: 1px solid var(--m-border);
   border-radius: 10px;
-  color: #0a3456;
-  background: #ffffff99;
+  color: var(--m-blue);
+  background: var(--m-surface);
   font: inherit;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 800;
 }
 
@@ -261,7 +292,7 @@
   gap: 10px;
   margin-top: 12px;
   padding-top: 12px;
-  border-top: 1px solid #0a34561c;
+  border-top: 1px solid var(--m-border);
 }
 
 .id-card-details span {
@@ -269,8 +300,8 @@
   gap: 3px;
 }
 .id-card-details small {
-  color: #628397;
-  font-size: 9px;
+  color: var(--m-muted);
+  font-size: 11px;
   letter-spacing: 0.8px;
 }
 .id-card-details strong {
@@ -280,9 +311,9 @@
 .hello-card {
   margin-top: 17px;
   padding: 18px;
-  border: 1px solid #86c3a044;
-  border-radius: 18px;
-  background: #86c3a012;
+  border: 1px solid var(--m-border);
+  border-radius: 12px;
+  background: #faf8f1;
 }
 
 .hello-card h2 {
@@ -293,17 +324,17 @@
 
 .hello-card p:last-child {
   margin: 9px 0 0;
-  color: #b8cedc;
-  font-size: 12px;
+  color: var(--m-muted);
+  font-size: 14px;
   line-height: 1.5;
 }
 
 .mobile-footnote {
   max-width: 520px;
   margin: 28px auto 0;
-  color: #7899ad;
+  color: var(--m-muted);
   text-align: center;
-  font-size: 10px;
+  font-size: 12px;
 }
 
 @media (max-width: 360px) {

@@ -4,29 +4,59 @@
   </div>
 
   <section class="login-card" aria-labelledby="login-title">
-    <h1 id="login-title">Your Mobile<br /><span>Benefits Portal</span></h1>
-    <p class="intro">Sign in directly to your private MyTRS mobile experience.</p>
+    <h1 id="login-title">Sign in to<br /><span>MyTRS</span></h1>
+    <p class="intro">Access your pension, health benefits, and member records.</p>
 
     @if (auth.hasSavedSession() || auth.lockedForBackground()) {
-      <button class="primary-action biometric-action" type="button" [disabled]="auth.busy()" (click)="unlock()">
+      <button
+        class="primary-action biometric-action"
+        type="button"
+        [disabled]="auth.busy()"
+        (click)="unlock()"
+      >
         <span class="face-icon" aria-hidden="true">
           <svg viewBox="0 0 32 32" role="img" aria-label="Face ID">
-            <path d="M10 5H7a2 2 0 0 0-2 2v3M22 5h3a2 2 0 0 1 2 2v3M10 27H7a2 2 0 0 1-2-2v-3M22 27h3a2 2 0 0 0 2-2v-3" />
-            <path d="M12 13.5c.8-1 1.9-1.5 3-1.5s2.2.5 3 1.5M12 19c1.1 1.2 2.4 1.8 4 1.8s2.9-.6 4-1.8M13 16h.01M19 16h.01" />
+            <path
+              d="M10 5H7a2 2 0 0 0-2 2v3M22 5h3a2 2 0 0 1 2 2v3M10 27H7a2 2 0 0 1-2-2v-3M22 27h3a2 2 0 0 0 2-2v-3"
+            />
+            <path
+              d="M12 13.5c.8-1 1.9-1.5 3-1.5s2.2.5 3 1.5M12 19c1.1 1.2 2.4 1.8 4 1.8s2.9-.6 4-1.8M13 16h.01M19 16h.01"
+            />
           </svg>
         </span>
-        <span><strong>{{ auth.biometricLabel() }}</strong></span>
+        <span
+          ><strong>{{ auth.biometricLabel() }}</strong></span
+        >
         <span class="chevron">›</span>
       </button>
       <div class="divider"><span>or</span></div>
     }
 
-    <form class="credentials" (ngSubmit)="signIn()" novalidate>
-      <label>Username<input name="username" type="text" autocomplete="username" autocapitalize="none" [(ngModel)]="username" required /></label>
-      <label>Password<input name="password" type="password" autocomplete="current-password" [(ngModel)]="password" required /></label>
+    <form class="credentials" (ngSubmit)="signIn()" novalidate [attr.aria-busy]="auth.busy()">
+      <label
+        >Username<input
+          name="username"
+          type="text"
+          autocomplete="username"
+          autocapitalize="none"
+          autocorrect="off"
+          spellcheck="false"
+          [(ngModel)]="username"
+          required
+      /></label>
+      <label
+        >Password<input
+          name="password"
+          type="password"
+          autocomplete="current-password"
+          [(ngModel)]="password"
+          required
+      /></label>
       <button class="primary-action" type="submit" [disabled]="auth.busy()">
         <span class="key-icon">→</span>
-        <span><strong>Sign in securely</strong><small>Use your MyTRS account</small></span>
+        <span
+          ><strong>{{ auth.busy() ? 'Signing in…' : 'Sign in' }}</strong></span
+        >
         <span class="chevron">›</span>
       </button>
     </form>
@@ -36,11 +66,11 @@
       <span>Remember this device for {{ auth.biometricLabel() }} unlock</span>
     </label>
 
-    @if (auth.busy()) {
-      <p class="status" role="status">Signing in to MyTRS…</p>
-    }
     @if (!auth.online() && auth.hasSavedSession()) {
-      <p class="offline-login-note" role="status">You are offline. Biometric unlock can still open saved information; updates will be available when you reconnect.</p>
+      <p class="offline-login-note" role="status">
+        You are offline. Biometric unlock can still open saved information; updates will be
+        available when you reconnect.
+      </p>
     }
     @if (auth.error()) {
       <p class="error" role="alert">{{ auth.error() }}</p>

@@ -10,12 +10,13 @@
   max-width: 520px;
   margin: 0 auto;
   padding: 7px;
-  border: 1px solid #ffffff25;
-  border-radius: 20px;
-  background: #082f4de8;
-  box-shadow: 0 12px 28px #02172544;
-  backdrop-filter: blur(12px);
-  transition: transform .2s ease, opacity .2s ease;
+  border: 1px solid var(--m-border);
+  border-radius: 14px;
+  background: var(--m-surface);
+  box-shadow: 0 12px 28px #163f5312;
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease;
 }
 
 .mobile-toolbar button {
@@ -24,7 +25,7 @@
   border-radius: 13px;
   min-height: 48px;
   padding: 8px 3px 7px;
-  color: #9fbaca;
+  color: var(--m-muted);
   background: transparent;
   font: inherit;
   cursor: pointer;
@@ -32,12 +33,13 @@
 }
 
 .mobile-toolbar button.active {
-  color: #f4f8fb;
-  background: #ffffff18;
+  color: var(--m-blue);
+  background: var(--m-soft);
+  box-shadow: inset 0 -3px var(--m-teal);
 }
 
 .mobile-toolbar button:focus-visible {
-  outline: 2px solid #86c3a0;
+  outline: 2px solid var(--m-teal);
   outline-offset: 2px;
 }
 
@@ -46,16 +48,23 @@
   display: block;
 }
 
-.mobile-toolbar span {
-  color: #86c3a0;
-  font-size: 18px;
-  line-height: 18px;
+.mobile-toolbar svg {
+  display: block;
+  width: 22px;
+  height: 22px;
+  margin: 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  color: var(--m-teal);
 }
 
 .mobile-toolbar small {
   overflow: hidden;
   margin-top: 5px;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 700;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -72,5 +81,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .mobile-toolbar { transition: none; }
+  .mobile-toolbar {
+    transition: none;
+  }
 }

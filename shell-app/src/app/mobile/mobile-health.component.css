@@ -2,7 +2,7 @@
   display: block;
   max-width: 520px;
   margin: 18px auto 0;
-  color: #eaf3f7;
+  color: var(--m-text);
 }
 
 .mobile-feature {
@@ -24,8 +24,8 @@
 .eyebrow,
 .mobile-eyebrow {
   margin: 0 0 8px;
-  color: #86c3a0;
-  font-size: 10px;
+  color: var(--m-teal);
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: 1.6px;
 }
@@ -33,17 +33,17 @@
 .feature-heading h2,
 .mobile-subpage-header h2 {
   margin: 0;
-  color: #f4f8fb;
+  color: var(--m-text);
   font-size: clamp(25px, 7vw, 30px);
-  letter-spacing: -0.04em;
+  letter-spacing: -0.02em;
   line-height: 1.08;
 }
 
 .feature-subtitle,
 .mobile-subpage-header p:last-child {
   margin: 8px 0 0;
-  color: #b8cedc;
-  font-size: 12px;
+  color: var(--m-muted);
+  font-size: 14px;
   line-height: 1.45;
 }
 
@@ -52,16 +52,26 @@
   gap: 4px;
   margin: 12px 0 0;
   padding: 12px 14px;
-  border: 1px solid #edbd6880;
+  border: 1px solid var(--m-warning-border);
   border-radius: 12px;
-  color: #f6e0b2;
-  background: #7b572533;
-  font-size: 12px;
+  color: var(--m-warning);
+  background: var(--m-warning-bg);
+  font-size: 14px;
   line-height: 1.4;
 }
 
-.offline-notice strong { color: #ffd98c; font-size: 13px; }
-.mobile-offline-fieldset { min-inline-size: 0; margin: 0; padding: 0; border: 0; }
+.offline-notice strong {
+  color: var(--m-warning);
+  font-size: 13px;
+}
+.mobile-offline-fieldset {
+  display: grid;
+  gap: 16px;
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
 
 button,
 input,
@@ -78,7 +88,7 @@ button:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-  outline: 2px solid #9fddb7;
+  outline: 2px solid var(--m-teal);
   outline-offset: 2px;
 }
 
@@ -89,12 +99,12 @@ button:disabled {
 .quiet-button,
 .secondary-button {
   min-height: 44px;
-  border: 1px solid #ffffff30;
+  border: 1px solid var(--m-border);
   border-radius: 10px;
   padding: 9px 12px;
-  color: #c0d5e1;
-  background: #ffffff0d;
-  font-size: 11px;
+  color: var(--m-muted);
+  background: var(--m-surface);
+  font-size: 13px;
   white-space: nowrap;
 }
 
@@ -111,60 +121,10 @@ button:disabled {
   border: 0;
   border-radius: 10px;
   padding: 11px 14px;
-  color: #092d4d;
-  background: #86c3a0;
-  font-size: 12px;
+  color: var(--m-white);
+  background: var(--m-teal);
+  font-size: 14px;
   font-weight: 800;
-}
-
-.feature-status,
-.feature-error,
-.feature-success {
-  margin: 12px 0 0;
-  padding: 14px 16px;
-  border-radius: 10px;
-  font-size: 11px;
-  line-height: 1.45;
-}
-
-.feature-status {
-  color: #b8cedc;
-  background: #ffffff0b;
-}
-
-.feature-error {
-  color: #ffcad0;
-  border: 1px solid #ef829044;
-  background: #7e263044;
-}
-
-.feature-success {
-  color: #d0f0dc;
-  border: 1px solid #86c3a044;
-  background: #86c3a012;
-}
-
-.mobile-welcome {
-  display: grid;
-  gap: 6px;
-  margin-top: 17px;
-  padding: 16px;
-  border: 1px solid #ffffff25;
-  border-radius: 16px;
-  background: linear-gradient(135deg, #ffffff12, #ffffff08);
-}
-
-.mobile-welcome h3 {
-  margin: 0;
-  color: #f4f8fb;
-  font-size: 16px;
-}
-
-.mobile-welcome p:last-child {
-  margin: 0;
-  color: #b8ceda;
-  font-size: 12px;
-  line-height: 1.45;
 }
 
 .mobile-action-grid {
@@ -182,11 +142,12 @@ button:disabled {
   gap: 10px;
   min-width: 0;
   min-height: 116px;
-  border: 1px solid #ffffff25;
-  border-radius: 16px;
+  border: 1px solid var(--m-border);
+  border-left: 4px solid var(--m-teal);
+  border-radius: 12px;
   padding: 14px;
-  color: #eaf3f7;
-  background: #ffffff0b;
+  color: var(--m-text);
+  background: var(--m-surface);
   text-align: left;
   cursor: pointer;
   transition:
@@ -197,16 +158,12 @@ button:disabled {
 
 .mobile-action-card:hover:not(:disabled),
 .mobile-action-card:focus-visible {
-  border-color: #86c3a0;
-  background: #ffffff15;
+  border-color: var(--m-teal);
+  background: var(--m-surface);
 }
 
 .mobile-action-card:active:not(:disabled) {
   transform: scale(0.985);
-}
-
-.mobile-action-primary {
-  background: linear-gradient(145deg, #1d5176, #153f60);
 }
 
 .mobile-action-card > span:first-child {
@@ -215,32 +172,20 @@ button:disabled {
   min-width: 0;
 }
 
-.mobile-action-icon {
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 11px;
-  color: #092d4d;
-  background: #86c3a0;
-  font-size: 18px;
-  line-height: 1;
-}
-
 .mobile-action-card strong {
-  color: #f4f8fb;
-  font-size: 13px;
+  color: var(--m-blue);
+  font-size: 16px;
   line-height: 1.2;
 }
 
 .mobile-action-card small {
-  color: #b8ceda;
-  font-size: 10px;
-  line-height: 1.35;
+  color: var(--m-muted);
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .action-chevron {
-  color: #9fddb7;
+  color: var(--m-teal);
   font-size: 25px;
   line-height: 1;
 }
@@ -253,17 +198,17 @@ button:disabled {
   box-sizing: border-box;
   margin-top: 17px;
   overflow: hidden;
-  border: 1px solid #ffffff25;
-  border-radius: 16px;
-  background: #ffffff09;
+  border: 1px solid var(--m-border);
+  border-radius: 12px;
+  background: var(--m-surface);
 }
 
 .mobile-section-label {
   padding: 11px 14px;
-  border-bottom: 2px solid #86c3a0;
-  color: #eaf3f7;
-  background: #ffffff0d;
-  font-size: 10px;
+  border-bottom: 2px solid var(--m-teal);
+  color: var(--m-blue);
+  background: var(--m-soft);
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: 1px;
 }
@@ -276,9 +221,9 @@ button:disabled {
 }
 
 .coverage-section-heading .quiet-button {
-  min-height: 34px;
+  min-height: 44px;
   padding: 6px 9px;
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .mobile-coverage-list {
@@ -291,40 +236,40 @@ button:disabled {
   display: grid;
   gap: 4px;
   padding: 12px;
-  border: 1px solid #ffffff20;
+  border: 1px solid var(--m-border);
   border-radius: 11px;
-  background: #ffffff08;
+  background: var(--m-surface);
 }
 
 .mobile-coverage-row strong {
-  color: #f4f8fb;
+  color: var(--m-text);
   font-size: 13px;
 }
 
 .mobile-coverage-row span {
-  color: #c5d8e3;
-  font-size: 11px;
+  color: var(--m-muted);
+  font-size: 13px;
 }
 
 .mobile-coverage-row small {
-  color: #91b0c0;
-  font-size: 10px;
+  color: var(--m-muted);
+  font-size: 12px;
 }
 
 .mobile-coverage-empty {
   display: grid;
   gap: 6px;
   padding: 20px 14px;
-  color: #c0d5e1;
+  color: var(--m-muted);
 }
 
 .mobile-coverage-empty strong {
-  color: #f4f8fb;
+  color: var(--m-text);
   font-size: 15px;
 }
 
 .mobile-coverage-empty span {
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.45;
 }
 
@@ -342,16 +287,16 @@ button:disabled {
 .feature-card {
   margin-top: 17px;
   padding: 17px;
-  border: 1px solid #ffffff25;
-  border-radius: 16px;
-  color: #0a3456;
-  background: linear-gradient(135deg, #f6fbfc, #dcecee);
-  box-shadow: 0 16px 35px #02172538;
+  border: 1px solid var(--m-border);
+  border-radius: 12px;
+  color: var(--m-blue);
+  background: var(--m-surface);
+  box-shadow: 0 16px 35px #163f5312;
 }
 
 .feature-card-title {
-  color: #34718a;
-  font-size: 10px;
+  color: var(--m-blue);
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: 1px;
 }
@@ -367,8 +312,8 @@ button:disabled {
 }
 
 .feature-summary span {
-  color: #537188;
-  font-size: 12px;
+  color: var(--m-muted);
+  font-size: 14px;
 }
 
 .mobile-subpage {
@@ -388,10 +333,10 @@ button:disabled {
   place-items: center;
   width: 44px;
   height: 44px;
-  border: 1px solid #ffffff35;
+  border: 1px solid var(--m-border);
   border-radius: 50%;
-  color: #c0d5e1;
-  background: #ffffff0d;
+  color: var(--m-muted);
+  background: var(--m-surface);
   font-size: 28px;
   line-height: 1;
 }
@@ -417,10 +362,10 @@ button:disabled {
   min-width: 0;
   min-height: 62px;
   padding: 8px 3px;
-  border: 1px solid #ffffff22;
+  border: 1px solid var(--m-border);
   border-radius: 10px;
-  color: #8eaebe;
-  background: #ffffff09;
+  color: var(--m-muted);
+  background: var(--m-surface);
   font: inherit;
   text-align: center;
   -webkit-tap-highlight-color: transparent;
@@ -431,26 +376,26 @@ button:disabled {
 }
 
 .stepper-step:focus-visible {
-  outline: 2px solid #9fddb7;
+  outline: 2px solid var(--m-teal);
   outline-offset: 2px;
 }
 
 .mobile-stepper-nav li.current {
-  color: #f4f8fb;
+  color: var(--m-text);
 }
 
 .mobile-stepper-nav li.current .stepper-step {
-  border-color: #86c3a0;
-  color: #f4f8fb;
-  background: #86c3a018;
+  border-color: var(--m-teal);
+  color: var(--m-text);
+  background: var(--m-soft);
 }
 
 .mobile-stepper-nav li.complete {
-  color: #b7dcc5;
+  color: var(--m-teal);
 }
 
 .mobile-stepper-nav li.complete .stepper-step {
-  color: #b7dcc5;
+  color: var(--m-teal);
 }
 
 .step-number {
@@ -459,21 +404,21 @@ button:disabled {
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  color: #092d4d;
-  background: #5d7b92;
-  font-size: 11px;
+  color: var(--m-white);
+  background: var(--m-muted);
+  font-size: 13px;
   font-weight: 800;
 }
 
 .mobile-stepper-nav li.current .step-number,
 .mobile-stepper-nav li.complete .step-number {
-  background: #86c3a0;
+  background: var(--m-teal);
 }
 
 .stepper-step > span:last-child {
   overflow: hidden;
   max-width: 100%;
-  font-size: 9px;
+  font-size: 10px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -489,18 +434,18 @@ button:disabled {
   min-width: 0;
   margin: 0;
   padding: 16px;
-  border: 1px solid #ffffff25;
-  border-radius: 16px;
-  background: #ffffff09;
+  border: 1px solid var(--m-border);
+  border-radius: 12px;
+  background: var(--m-surface);
 }
 
 .mobile-enrollment-card-title {
   margin: -16px -16px 2px;
   padding: 13px 16px 12px;
-  border-bottom: 1px solid #ffffff24;
-  border-radius: 15px 15px 0 0;
-  background: #ffffff08;
-  color: #f4f8fb;
+  border-bottom: 1px solid var(--m-border);
+  border-radius: 12px 15px 0 0;
+  background: var(--m-soft);
+  color: var(--m-blue);
   font-size: 17px;
   font-weight: 800;
   line-height: 1.2;
@@ -511,8 +456,8 @@ button:disabled {
   display: grid;
   gap: 6px;
   min-width: 0;
-  color: #c5d8e3;
-  font-size: 12px;
+  color: var(--m-muted);
+  font-size: 14px;
   font-weight: 700;
 }
 
@@ -527,11 +472,11 @@ button:disabled {
   max-width: 100%;
   min-height: 46px;
   box-sizing: border-box;
-  border: 1px solid #ffffff32;
+  border: 1px solid var(--m-border);
   border-radius: 10px;
   padding: 11px;
-  color: #f4f8fb;
-  background: #082f4d;
+  color: var(--m-text);
+  background: var(--m-surface);
   font-size: 16px;
 }
 
@@ -543,18 +488,18 @@ button:disabled {
 
 .mobile-enrollment-card select,
 .mobile-modal select {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 .mobile-legal {
   max-height: 210px;
   overflow: auto;
   padding: 13px;
-  border: 1px solid #ffffff25;
+  border: 1px solid var(--m-border);
   border-radius: 10px;
-  color: #c0d5e1;
-  background: #061f35;
-  font-size: 12px;
+  color: var(--m-muted);
+  background: var(--m-soft);
+  font-size: 14px;
   line-height: 1.5;
   -webkit-overflow-scrolling: touch;
 }
@@ -576,8 +521,8 @@ button:disabled {
   display: flex;
   align-items: flex-start;
   gap: 9px;
-  color: #d8e8ed;
-  font-size: 12px;
+  color: var(--m-text);
+  font-size: 14px;
   font-weight: 400;
   line-height: 1.4;
 }
@@ -587,9 +532,9 @@ button:disabled {
   min-height: 44px;
   margin-top: 2px;
   padding: 10px 12px;
-  border: 1px solid #ffffff25;
+  border: 1px solid var(--m-border);
   border-radius: 10px;
-  background: #ffffff09;
+  background: var(--m-surface);
   cursor: pointer;
 }
 
@@ -604,17 +549,17 @@ button:disabled {
   min-height: 20px;
   margin: 0;
   padding: 0;
-  border: 1px solid #9fbdca;
+  border: 1px solid var(--m-border);
   border-radius: 5px;
-  background: #082f4d;
-  color: #092d4d;
+  background: var(--m-surface);
+  color: var(--m-white);
   font-size: 13px;
   line-height: 1;
 }
 
 .mobile-check input:checked {
-  border-color: #86c3a0;
-  background: #86c3a0;
+  border-color: var(--m-teal);
+  background: var(--m-teal);
 }
 
 .mobile-check input:checked::after {
@@ -631,7 +576,7 @@ button:disabled {
   padding: 0;
   border: 0;
   background: transparent;
-  accent-color: #86c3a0;
+  accent-color: var(--m-teal);
 }
 
 .mobile-radio-group {
@@ -640,23 +585,28 @@ button:disabled {
   min-inline-size: 0;
   margin: 0;
   padding: 13px;
-  border: 1px solid #ffffff24;
+  border: 1px solid var(--m-border);
   border-radius: 10px;
+}
+
+.mobile-radio-group label {
+  align-items: center;
+  min-height: 44px;
 }
 
 .mobile-radio-group legend {
   width: auto;
   padding: 0 4px;
-  color: #c5d8e3;
-  font-size: 12px;
+  color: var(--m-muted);
+  font-size: 14px;
   font-weight: 700;
 }
 
 .mobile-form-hint,
 .mobile-field-hint {
   margin: -3px 0 0;
-  color: #91b0c0;
-  font-size: 11px;
+  color: var(--m-muted);
+  font-size: 13px;
   line-height: 1.4;
 }
 
@@ -664,9 +614,9 @@ button:disabled {
   display: grid;
   gap: 10px;
   padding: 13px;
-  border: 1px solid #ffffff23;
+  border: 1px solid var(--m-border);
   border-radius: 11px;
-  background: #ffffff08;
+  background: var(--m-surface);
 }
 
 .mobile-plan-title {
@@ -674,7 +624,7 @@ button:disabled {
   align-items: flex-start;
   justify-content: space-between;
   gap: 10px;
-  color: #f4f8fb;
+  color: var(--m-text);
 }
 
 .mobile-plan-title > span {
@@ -683,18 +633,18 @@ button:disabled {
 }
 
 .mobile-plan-title small {
-  color: #91b0c0;
-  font-size: 10px;
+  color: var(--m-muted);
+  font-size: 12px;
   font-weight: 400;
 }
 
 .link-button {
-  min-height: 36px;
+  min-height: 44px;
   border: 0;
   padding: 5px 0;
-  color: #9fddb7;
+  color: var(--m-teal);
   background: transparent;
-  font-size: 11px;
+  font-size: 13px;
   text-decoration: underline;
   white-space: nowrap;
 }
@@ -710,14 +660,14 @@ button:disabled {
   display: grid;
   gap: 3px;
   min-width: 0;
-  color: #d8e8ed;
-  font-size: 12px;
+  color: var(--m-text);
+  font-size: 14px;
 }
 
 .mobile-person-row small,
 .mobile-dependent-option small {
-  color: #91b0c0;
-  font-size: 10px;
+  color: var(--m-muted);
+  font-size: 12px;
 }
 
 .mobile-person-row select {
@@ -736,15 +686,15 @@ button:disabled {
   grid-template-columns: 1fr 1fr;
   gap: 5px 9px;
   padding: 11px;
-  border: 1px solid #ffffff20;
+  border: 1px solid var(--m-border);
   border-radius: 10px;
-  color: #c5d8e3;
-  font-size: 11px;
+  color: var(--m-muted);
+  font-size: 13px;
 }
 
 .mobile-summary-row strong {
   grid-column: 1 / -1;
-  color: #f4f8fb;
+  color: var(--m-text);
   font-size: 13px;
 }
 
@@ -761,9 +711,9 @@ button:disabled {
   gap: 8px;
   padding: 10px;
   border-radius: 9px;
-  color: #c5d8e3;
-  background: #ffffff08;
-  font-size: 11px;
+  color: var(--m-muted);
+  background: var(--m-surface);
+  font-size: 13px;
 }
 
 .mobile-premium-grid dt,
@@ -772,14 +722,14 @@ button:disabled {
 }
 
 .mobile-premium-grid dd {
-  color: #9fddb7;
+  color: var(--m-teal);
   font-weight: 800;
 }
 
 .mobile-premium-grid .total {
   grid-column: 1 / -1;
-  border: 1px solid #86c3a044;
-  background: #86c3a012;
+  border: 1px solid var(--m-border);
+  background: var(--m-soft);
 }
 
 .mobile-enrollment-actions,
@@ -802,15 +752,11 @@ button:disabled {
   min-height: 44px;
 }
 
-.feature-page-back {
-  margin-top: 12px;
-}
-
 .mobile-mbi-intro {
   margin: 0;
   padding: 14px;
-  color: #c0d5e1;
-  font-size: 12px;
+  color: var(--m-muted);
+  font-size: 14px;
   line-height: 1.45;
 }
 
@@ -835,29 +781,29 @@ button:disabled {
   min-width: 132px;
   min-height: 58px;
   padding: 9px 11px;
-  border: 1px solid #ffffff2b;
+  border: 1px solid var(--m-border);
   border-radius: 10px;
-  color: #c0d5e1;
-  background: #ffffff0b;
-  font-size: 11px;
+  color: var(--m-muted);
+  background: var(--m-surface);
+  font-size: 13px;
   text-align: left;
   scroll-snap-align: start;
 }
 
 .mobile-mbi-people button.selected {
-  border-color: #86c3a0;
-  color: #f4f8fb;
-  background: #86c3a024;
+  border-color: var(--m-teal);
+  color: var(--m-text);
+  background: var(--m-soft);
 }
 
 .mobile-mbi-people strong {
   color: inherit;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .mobile-mbi-people small {
-  color: #91b0c0;
-  font-size: 10px;
+  color: var(--m-muted);
+  font-size: 12px;
 }
 
 .mobile-mbi-form {
@@ -882,8 +828,8 @@ button:disabled {
 
 .mobile-field-group label,
 .mobile-mbi-date-grid label {
-  color: #c5d8e3;
-  font-size: 12px;
+  color: var(--m-muted);
+  font-size: 14px;
   font-weight: 700;
 }
 
@@ -893,18 +839,18 @@ button:disabled {
   min-width: 0;
   box-sizing: border-box;
   min-height: 46px;
-  border: 1px solid #ffffff32;
+  border: 1px solid var(--m-border);
   border-radius: 10px;
   padding: 11px;
-  color: #f4f8fb;
-  background: #082f4d;
+  color: var(--m-text);
+  background: var(--m-surface);
   font-size: 16px;
 }
 
 .mobile-mbi-form input::placeholder,
 .mobile-modal input::placeholder,
 .mobile-enrollment-card input::placeholder {
-  color: #7899ad;
+  color: var(--m-muted);
   opacity: 1;
 }
 
@@ -950,11 +896,11 @@ button:disabled {
   justify-content: center;
   gap: 8px;
   min-height: 46px;
-  border: 1px solid #86c3a066;
+  border: 1px solid var(--m-border);
   border-radius: 10px;
-  color: #d8f0e1;
-  background: #86c3a018;
-  font-size: 12px;
+  color: var(--m-teal);
+  background: var(--m-soft);
+  font-size: 14px;
   font-weight: 700;
 }
 
@@ -996,10 +942,10 @@ button:disabled {
   overflow-x: hidden;
   overflow-y: auto;
   padding: 23px 18px 18px;
-  border: 1px solid #ffffff2c;
-  border-radius: 18px;
-  color: #eaf3f7;
-  background: #0d4165;
+  border: 1px solid var(--m-border);
+  border-radius: 12px;
+  color: var(--m-text);
+  background: var(--m-surface);
   box-shadow: 0 18px 60px #0008;
   overscroll-behavior: contain;
   touch-action: pan-y;
@@ -1008,7 +954,8 @@ button:disabled {
 
 .mobile-modal h3 {
   margin: 0;
-  color: #f4f8fb;
+  padding-right: 36px;
+  color: var(--m-text);
   font-size: 22px;
   letter-spacing: -0.02em;
 }
@@ -1024,19 +971,19 @@ button:disabled {
   right: 10px;
   display: grid;
   place-items: center;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border: 0;
   border-radius: 50%;
-  color: #c0d5e1;
+  color: var(--m-muted);
   background: transparent;
   font-size: 28px;
   line-height: 1;
 }
 
 .mobile-muted {
-  color: #b8ceda;
-  font-size: 12px;
+  color: var(--m-muted);
+  font-size: 14px;
 }
 
 .full-button {
@@ -1049,7 +996,7 @@ button:disabled {
   justify-content: space-between;
   gap: 10px;
   padding: 11px 0;
-  border-bottom: 1px solid #ffffff22;
+  border-bottom: 1px solid var(--m-border);
 }
 
 .mobile-dependent-option > span {
@@ -1061,7 +1008,7 @@ button:disabled {
 .mobile-dependent-option .primary-button {
   min-height: 40px;
   padding: 8px 11px;
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .dependent-form {
@@ -1098,6 +1045,10 @@ button:disabled {
 }
 
 @media (max-width: 360px) {
+  .mobile-person-row {
+    grid-template-columns: 1fr;
+  }
+
   .mobile-mbi-date-grid,
   .mobile-premium-grid {
     grid-template-columns: 1fr;

@@ -1,0 +1,113 @@
+/* Dedicated mobile Shell only. Palette adapted from the TRS reference screenshots.
+   Kept local to these roots so the hosted legacy experience is unchanged. */
+.mobile-shell,
+.mobile-home {
+  --m-blue: #174c68;
+  --m-teal: #39746e;
+  --m-text: #2c302f;
+  --m-muted: #52646d;
+  --m-surface: #ffffff;
+  --m-white: #ffffff;
+  --m-soft: #edf5f5;
+  --m-border: #c8d6db;
+  --m-error: #9a3038;
+  --m-error-bg: #fff3f3;
+  --m-error-border: #dfafb3;
+  --m-warning: #775018;
+  --m-warning-bg: #fff8e9;
+  --m-warning-border: #dec48d;
+  color-scheme: light;
+  font-family: Arial, Helvetica, sans-serif;
+  line-height: 1.5;
+}
+
+/* Override the legacy global heading rule, not the mobile scroll geometry. */
+:is(.mobile-shell, .mobile-home) h1 {
+  border: 0;
+  padding-bottom: 0;
+}
+
+:is(.mobile-shell, .mobile-home) :is(h1, h2, h3) {
+  color: var(--m-blue);
+}
+
+:is(.mobile-shell, .mobile-home) :is(button, a, input, select, textarea):focus-visible {
+  outline: 3px solid var(--m-blue);
+  outline-offset: 3px;
+}
+
+.mobile-home :is(.feature-error, .feature-status, .feature-success, .offline-notice),
+.mobile-shell :is(.error, .status, .offline-login-note) {
+  border-left: 4px solid;
+  border-radius: 10px;
+  margin: 16px 0;
+  padding: 14px 16px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.mobile-home .feature-status,
+.mobile-shell .status {
+  color: var(--m-blue);
+  background: #eaf1f5;
+}
+
+.mobile-home .feature-error {
+  color: var(--m-error);
+  border: 1px solid var(--m-error-border);
+  border-left-width: 4px;
+  background: var(--m-error-bg);
+}
+
+.mobile-home .feature-success {
+  color: var(--m-teal);
+  border: 1px solid var(--m-border);
+  border-left-width: 4px;
+  background: var(--m-soft);
+}
+
+/* Keep disabled, cached form values readable in iOS. */
+.mobile-home :is(input, select, textarea):disabled {
+  opacity: 1;
+  -webkit-text-fill-color: var(--m-muted);
+  background: #f3f5f6;
+}
+
+.mobile-home
+  :is(
+    .feature-form label,
+    .mobile-field-group label,
+    .mobile-mbi-date-grid label,
+    .mobile-enrollment-card > label,
+    .mobile-modal > label
+  ) {
+  font-size: 13px;
+}
+
+.mobile-home
+  :is(
+    .feature-subtitle,
+    .mobile-form-hint,
+    .mobile-field-hint,
+    .mobile-mbi-intro,
+    .mobile-legal,
+    .mobile-check,
+    .mobile-muted
+  ) {
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.mobile-home :is(.quiet-button, .secondary-button, .primary-button, .camera-button) {
+  font-size: 13px;
+}
+
+.mobile-home .mobile-check input:checked {
+  color: var(--m-white);
+}
+
+.mobile-home .mobile-stepper-nav li.current .stepper-step {
+  border-width: 2px;
+  padding: 7px 2px;
+  background: var(--m-soft);
+}
