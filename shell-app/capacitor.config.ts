@@ -8,6 +8,12 @@ const config: CapacitorConfig = {
     cleartext: false
   },
   plugins: {
+    CapacitorHttp: {
+      // Route remote API traffic through URLSession/OkHttp. WKWebView's
+      // connection pool can remain unusable after an airplane-mode cycle even
+      // after native reachability reports that the device is online again.
+      enabled: true
+    },
     SplashScreen: {
       launchShowDuration: 0
     }

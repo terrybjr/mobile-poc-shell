@@ -1,6 +1,8 @@
 import { fakeAsync, flushMicrotasks, TestBed, tick } from '@angular/core/testing';
+import { Capacitor } from '@capacitor/core';
 import { Network } from '@capacitor/network';
 import {
+  MOBILE_NATIVE_HTTP,
   MOBILE_SECURE_STORAGE,
   MobileAuthService,
   refreshResponseRequiresSignIn,
@@ -23,14 +25,20 @@ describe('MobileAuthService offline refresh', () => {
   let auth: MobileAuthService;
   let fetchSpy: jasmine.Spy;
   let networkStatusSpy: jasmine.Spy;
+  let nativePostSpy: jasmine.Spy;
 
   const response = (status: number, body: object = {}) =>
     ({ status, ok: status >= 200 && status < 300, json: () => Promise.resolve(body) }) as Response;
   const tokens = { access_token: 'access', refresh_token: 'refresh', expires_in: 300 };
 
   beforeEach(() => {
+    nativePostSpy = jasmine.createSpy('nativePost');
     TestBed.configureTestingModule({
       providers: [
+        {
+          provide: MOBILE_NATIVE_HTTP,
+          useValue: { post: nativePostSpy },
+        },
         {
           provide: MOBILE_SECURE_STORAGE,
           useValue: {
@@ -161,6 +169,28 @@ describe('MobileAuthService offline refresh', () => {
     const body = options.body as URLSearchParams;
     expect(body.get('scope')).toBe('openid profile offline_access');
   }));
+
+  it('uses the native HTTP stack for refresh on a device', async () => {
+    spyOn(Capacitor, 'isNativePlatform').and.returnValue(true);
+    nativePostSpy.and.resolveTo({
+      status: 200,
+      data: { ...tokens, access_token: 'native-refresh' },
+      headers: {},
+      url: 'https://brianthedeveloper.com/realms/trs-demo/protocol/openid-connect/token',
+    });
+
+    const refreshed = await (auth as any).exchangeRefreshToken('saved-refresh');
+
+    expect(refreshed.access_token).toBe('native-refresh');
+    expect(nativePostSpy).toHaveBeenCalledWith(
+      jasmine.objectContaining({
+        data: jasmine.stringMatching(/refresh_token=saved-refresh/),
+        connectTimeout: 10_000,
+        readTimeout: 10_000,
+      }),
+    );
+    expect(fetchSpy.calls.count()).toBe(0);
+  });
 
   it('does not send overlapping reconnect requests', fakeAsync(() => {
     void auth.beginLogin('demo', 'password', false);

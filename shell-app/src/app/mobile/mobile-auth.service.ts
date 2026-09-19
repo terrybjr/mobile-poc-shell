@@ -1,4 +1,4 @@
-import { Capacitor } from '@capacitor/core';
+import { Capacitor, CapacitorHttp } from '@capacitor/core';
 import { App } from '@capacitor/app';
 import { Network } from '@capacitor/network';
 import { BiometricAuth, BiometryType } from '@aparajita/capacitor-biometric-auth';
@@ -13,6 +13,11 @@ export const MOBILE_SECURE_STORAGE = new InjectionToken<typeof SecureStorage>(
     factory: () => SecureStorage,
   },
 );
+
+export const MOBILE_NATIVE_HTTP = new InjectionToken<typeof CapacitorHttp>('Mobile native HTTP', {
+  providedIn: 'root',
+  factory: () => CapacitorHttp,
+});
 
 interface TokenResponse {
   access_token: string;
@@ -47,6 +52,7 @@ const REFRESH_TIMEOUT_MS = 10_000;
 @Injectable({ providedIn: 'root' })
 export class MobileAuthService {
   private readonly storage = inject(MOBILE_SECURE_STORAGE);
+  private readonly nativeHttp = inject(MOBILE_NATIVE_HTTP);
   readonly authenticated = signal(false);
   readonly initialized = signal(false);
   readonly busy = signal(false);
@@ -355,6 +361,29 @@ export class MobileAuthService {
   }
 
   private async exchangeRefreshToken(refreshToken: string): Promise<TokenResponse> {
+    const body = new URLSearchParams({
+      grant_type: 'refresh_token',
+      client_id: CLIENT_ID,
+      refresh_token: refreshToken,
+    }).toString();
+
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const response = await this.nativeHttp.post({
+          url: `${KEYCLOAK_BASE}/realms/${REALM}/protocol/openid-connect/token`,
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          data: body,
+          connectTimeout: REFRESH_TIMEOUT_MS,
+          readTimeout: REFRESH_TIMEOUT_MS,
+          responseType: 'json',
+        });
+        return this.parseNativeRefreshResponse(response.status, response.data);
+      } catch (error) {
+        if (error instanceof InvalidSessionError || error instanceof NetworkAuthError) throw error;
+        throw new NetworkAuthError('Refresh could not reach the identity provider.');
+      }
+    }
+
     const controller = new AbortController();
     const timeout = window.setTimeout(() => controller.abort(), REFRESH_TIMEOUT_MS);
     let response: Response;
@@ -362,11 +391,7 @@ export class MobileAuthService {
       response = await fetch(`${KEYCLOAK_BASE}/realms/${REALM}/protocol/openid-connect/token`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          grant_type: 'refresh_token',
-          client_id: CLIENT_ID,
-          refresh_token: refreshToken,
-        }),
+        body,
         signal: controller.signal,
       });
     } catch {
@@ -379,6 +404,26 @@ export class MobileAuthService {
     } finally {
       window.clearTimeout(timeout);
     }
+  }
+
+  private parseNativeRefreshResponse(status: number, data: unknown): TokenResponse {
+    if (refreshResponseRequiresSignIn(status)) {
+      throw new InvalidSessionError('Refresh session is no longer valid.');
+    }
+    if (status < 200 || status >= 300) {
+      throw new NetworkAuthError(`Refresh service returned HTTP ${status}.`);
+    }
+
+    let tokens: TokenResponse;
+    try {
+      tokens = (typeof data === 'string' ? JSON.parse(data) : data) as TokenResponse;
+    } catch {
+      throw new NetworkAuthError('Refresh service returned an invalid response.');
+    }
+    if (!tokens?.access_token) {
+      throw new NetworkAuthError('Refresh service returned no access token.');
+    }
+    return tokens;
   }
 
   private async parseRefreshResponse(response: Response): Promise<TokenResponse> {
