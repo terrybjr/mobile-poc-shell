@@ -46,7 +46,7 @@
       class="connection-retry"
       type="button"
       (click)="recoverConnection()"
-      [disabled]="!auth.online() || auth.reconnecting()"
+      [disabled]="auth.reconnecting()"
       [style.visibility]="auth.offlineMode() ? 'visible' : 'hidden'"
     >
       {{ auth.onlineSignInRequired() ? 'Sign in' : 'Retry' }}

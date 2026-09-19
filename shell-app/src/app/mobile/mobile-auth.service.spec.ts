@@ -1,4 +1,5 @@
 import { fakeAsync, flushMicrotasks, TestBed, tick } from '@angular/core/testing';
+import { Network } from '@capacitor/network';
 import {
   MOBILE_SECURE_STORAGE,
   MobileAuthService,
@@ -21,6 +22,7 @@ declare global {
 describe('MobileAuthService offline refresh', () => {
   let auth: MobileAuthService;
   let fetchSpy: jasmine.Spy;
+  let networkStatusSpy: jasmine.Spy;
 
   const response = (status: number, body: object = {}) =>
     ({ status, ok: status >= 200 && status < 300, json: () => Promise.resolve(body) }) as Response;
@@ -41,6 +43,10 @@ describe('MobileAuthService offline refresh', () => {
     });
     auth = TestBed.inject(MobileAuthService);
     auth.online.set(true);
+    networkStatusSpy = spyOn(Network, 'getStatus').and.resolveTo({
+      connected: true,
+      connectionType: 'wifi',
+    });
     fetchSpy = spyOn(window, 'fetch').and.callFake(() => Promise.resolve(response(200, tokens)));
   });
 
@@ -115,6 +121,20 @@ describe('MobileAuthService offline refresh', () => {
     expect(auth.offlineMode()).toBeFalse();
     expect(window.__mobileAuth?.token).toBe('after-airplane-mode');
   }));
+
+  it('rechecks native connectivity when retry is tapped after a missed online event', async () => {
+    await auth.beginLogin('demo', 'password', true);
+    auth.online.set(false);
+    auth.markUnavailable();
+    networkStatusSpy.and.resolveTo({ connected: true, connectionType: 'wifi' });
+    fetchSpy.and.resolveTo(response(200, { ...tokens, access_token: 'manual-retry' }));
+
+    await auth.retryConnection();
+
+    expect(auth.online()).toBeTrue();
+    expect(auth.offlineMode()).toBeFalse();
+    expect(window.__mobileAuth?.token).toBe('manual-retry');
+  });
 
   it('keeps a remembered biometric session in read-only mode when refresh expires', fakeAsync(() => {
     void auth.beginLogin('demo', 'password', true);

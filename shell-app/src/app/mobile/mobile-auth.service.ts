@@ -265,8 +265,14 @@ export class MobileAuthService {
     this.scheduleRetry();
   }
 
-  retryConnection(): void {
-    if (this.authenticated() && this.online()) void this.revalidateOnlineSession();
+  async retryConnection(): Promise<void> {
+    if (!this.authenticated()) return;
+    this.cancelRetry();
+    if (this.online()) {
+      await this.revalidateOnlineSession();
+    } else {
+      await this.refreshConnectivityAndReconnect();
+    }
   }
 
   private applyNetworkStatus(connected: boolean): void {
@@ -310,12 +316,42 @@ export class MobileAuthService {
 
   private scheduleRetry(delay?: number): void {
     this.cancelRetry();
-    if (!this.authenticated() || !this.online()) return;
+    if (!this.authenticated()) return;
     this.retryTimer = window.setTimeout(
-      () => void this.revalidateOnlineSession(),
+      () => {
+        if (this.online()) {
+          void this.revalidateOnlineSession();
+        } else {
+          void this.refreshConnectivityAndReconnect();
+        }
+      },
       delay ?? this.retryDelay,
     );
     if (delay === undefined) this.retryDelay = Math.min(this.retryDelay * 2, 60_000);
+  }
+
+  /**
+   * Re-read native reachability before each retry. iOS can miss or publish its
+   * connectivity event before the data path is usable after airplane mode, so
+   * the cached `online` signal must never be the gate for a manual/background
+   * recovery attempt.
+   */
+  private async refreshConnectivityAndReconnect(): Promise<void> {
+    if (!this.authenticated()) return;
+
+    let connected: boolean;
+    try {
+      connected = (await Network.getStatus()).connected;
+    } catch {
+      connected = navigator.onLine;
+    }
+
+    this.online.set(connected);
+    if (!connected) {
+      this.markUnavailable();
+      return;
+    }
+    await this.revalidateOnlineSession();
   }
 
   private async exchangeRefreshToken(refreshToken: string): Promise<TokenResponse> {

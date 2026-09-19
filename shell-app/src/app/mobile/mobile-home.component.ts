@@ -122,6 +122,6 @@ export class MobileHomeComponent implements OnInit {
       this.signOut();
       return;
     }
-    this.auth.retryConnection();
+    void this.auth.retryConnection();
   }
 }
