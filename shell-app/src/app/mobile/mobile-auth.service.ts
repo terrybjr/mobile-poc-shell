@@ -304,9 +304,8 @@ export class MobileAuthService {
     } catch {
       this.applyNetworkStatus(navigator.onLine);
     }
-    if (this.lockedForBackground()) {
-      this.error.set('Unlock with biometrics to continue.');
-    } else if (
+    if (
+      !this.lockedForBackground() &&
       this.authenticated() &&
       this.online() &&
       !this.onlineSignInRequired()
@@ -588,6 +587,7 @@ export class MobileAuthService {
     this.authenticated.set(false);
     this.offlineMode.set(false);
     this.lockedForBackground.set(true);
+    this.error.set('');
     delete window.__mobileAuth;
     delete window.__healthAuth;
   }
