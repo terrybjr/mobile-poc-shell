@@ -9,6 +9,7 @@ import {
   OnInit,
   signal,
   untracked,
+  viewChild,
 } from '@angular/core';
 import { MobileAuthService } from './mobile-auth.service';
 import { MobileOfflineCacheService } from './mobile-offline-cache.service';
@@ -45,6 +46,11 @@ export class MobileHomeComponent implements OnInit {
   private readonly cache = inject(MobileOfflineCacheService);
   protected readonly activeTab = signal<MobileTab>('overview');
   protected readonly showIdCard = signal(false);
+  protected readonly pendingTab = signal<MobileTab | null>(null);
+  private readonly pensionView = viewChild(MobilePensionComponent);
+  private readonly healthView = viewChild(MobileHealthComponent);
+  private readonly leaveDialog = viewChild<ElementRef<HTMLDialogElement>>('leaveDialog');
+  private returnFocusTo: HTMLElement | null = null;
   protected readonly pensionLoading = signal(true);
   protected readonly pensionError = signal('');
   protected readonly hasPension = signal(false);
@@ -106,6 +112,37 @@ export class MobileHomeComponent implements OnInit {
   }
 
   selectTab(tab: MobileTab): void {
+    if (tab === this.activeTab() || this.pendingTab() || this.tabSaving()) return;
+    const feature = this.activeTab() === 'pension' ? this.pensionView() : this.healthView();
+    if (feature?.hasUnsavedChanges()) {
+      this.returnFocusTo = document.activeElement as HTMLElement | null;
+      this.pendingTab.set(tab);
+      this.leaveDialog()?.nativeElement.showModal();
+      return;
+    }
+    this.changeTab(tab);
+  }
+
+  protected tabSaving(): boolean {
+    return Boolean(this.pensionView()?.isSaving() || this.healthView()?.isSaving());
+  }
+
+  protected stayOnTab(): void {
+    this.pendingTab.set(null);
+    this.leaveDialog()?.nativeElement.close();
+    this.returnFocusTo?.focus();
+  }
+
+  protected discardAndLeave(): void {
+    const tab = this.pendingTab();
+    if (!tab || this.tabSaving()) return;
+    this.pendingTab.set(null);
+    this.leaveDialog()?.nativeElement.close();
+    this.changeTab(tab);
+    this.returnFocusTo?.focus();
+  }
+
+  private changeTab(tab: MobileTab): void {
     this.activeTab.set(tab);
     const mobileHome = this.elementRef.nativeElement.querySelector(
       '.mobile-home',

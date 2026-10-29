@@ -49,6 +49,14 @@ export class MobilePensionComponent implements OnInit {
   protected readonly member = signal<PensionSummary>({ ...INITIAL_PENSION });
   protected draft: PensionSummary = { ...INITIAL_PENSION };
 
+  hasUnsavedChanges(): boolean {
+    return JSON.stringify(this.draft) !== JSON.stringify(this.member());
+  }
+
+  isSaving(): boolean {
+    return this.busy();
+  }
+
   ngOnInit(): void {
     this.load();
   }

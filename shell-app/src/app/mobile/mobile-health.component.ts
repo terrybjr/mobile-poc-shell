@@ -40,6 +40,14 @@ interface EnrollmentDependent {
   name: string;
   relationship: string;
   selected: boolean;
+  prefix?: string;
+  firstName?: string;
+  middleName?: string;
+  lastName?: string;
+  suffix?: string;
+  dateOfBirth?: string;
+  gender?: string;
+  ssn?: string;
 }
 
 interface NewDependentForm {
@@ -165,6 +173,36 @@ export class MobileHealthComponent implements OnInit {
   protected draftMbiRecords: MbiRecord[] = INITIAL_MBI.map((record) => ({ ...record }));
   protected enrollment: EnrollmentDraft | null = null;
   protected newDependent: NewDependentForm = this.emptyDependentForm();
+  private confirmedMbiRecords: MbiRecord[] = INITIAL_MBI.map((record) => ({ ...record }));
+  private savedEnrollmentState = 'null';
+
+  hasUnsavedChanges(): boolean {
+    const editingDependent =
+      this.dependentModal() === 'new' &&
+      JSON.stringify(this.newDependent) !== JSON.stringify(this.emptyDependentForm());
+    return (
+      editingDependent ||
+      JSON.stringify(this.enrollment) !== this.savedEnrollmentState ||
+      JSON.stringify(this.draftMbiRecords) !== JSON.stringify(this.confirmedMbiRecords)
+    );
+  }
+
+  isSaving(): boolean {
+    return this.busy() || this.mbiBusy() || this.enrollmentSaving();
+  }
+
+  private acceptEnrollment(draft: EnrollmentDraft | null): void {
+    this.enrollment = draft ? { ...draft } : null;
+    this.savedEnrollmentState = JSON.stringify(this.enrollment);
+    void this.cache.write('health-enrollment', this.enrollment);
+  }
+
+  private acceptMbiRecords(records: MbiRecord[]): void {
+    // Coverage and dirty checks use a separate server-confirmed snapshot.
+    this.confirmedMbiRecords = records.map((record) => ({ ...record }));
+    this.draftMbiRecords = records.map((record) => ({ ...record }));
+    void this.cache.write('health-mbi', this.confirmedMbiRecords);
+  }
 
   ngOnInit(): void {
     this.load();
@@ -200,8 +238,8 @@ export class MobileHealthComponent implements OnInit {
       .subscribe({
         next: (data) => {
           this.apply(data);
-          this.enrollment = null;
-          this.draftMbiRecords = [];
+          this.acceptEnrollment(null);
+          this.acceptMbiRecords([]);
           this.loadMbi(token);
           this.resetMessage.set('Sample coverage has been restored.');
           this.busy.set(false);
@@ -232,8 +270,11 @@ export class MobileHealthComponent implements OnInit {
           });
       }
     }
-    for (const record of this.draftMbiRecords) {
-      if (record.medicareNumber && record.medicareNumber === record.reentryMedicareNumber) {
+    for (const record of this.confirmedMbiRecords) {
+      if (
+        this.normalizeMbi(record.medicareNumber) &&
+        this.normalizeMbi(record.medicareNumber) === this.normalizeMbi(record.reentryMedicareNumber)
+      ) {
         rows.push({
           coverage: 'Medicare',
           plan: `MBI — ${record.name}`,
@@ -310,7 +351,7 @@ export class MobileHealthComponent implements OnInit {
           this.enrollmentLoading.set(false);
 
           if (draft?.status === 'INCOMPLETE') {
-            this.enrollment = { ...draft };
+            this.acceptEnrollment(draft);
             this.restoreEnrollmentProgress(draft.currentStep || 1);
             this.enrollmentModal.set('resume');
             return;
@@ -335,6 +376,7 @@ export class MobileHealthComponent implements OnInit {
     const token = window.__mobileAuth?.token;
     if (!token) return;
 
+    this.enrollmentSaving.set(true);
     this.http
       .post<EnrollmentDraft>(
         `${API_BASE}/mobile-poc/wss-apps/health-ws/api/health/enrollment/start`,
@@ -344,12 +386,14 @@ export class MobileHealthComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (draft) => {
-          this.enrollment = { ...draft };
+          this.acceptEnrollment(draft);
+          this.enrollmentSaving.set(false);
           this.restoreEnrollmentProgress(1);
           this.enrollmentModal.set('eligibility');
         },
         error: (error) => {
           this.logApiError('POST /enrollment/start', error);
+          this.enrollmentSaving.set(false);
           this.enrollmentError.set(this.updateError(error));
         },
       });
@@ -426,7 +470,7 @@ export class MobileHealthComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (draft) => {
-          this.enrollment = draft ? { ...draft } : null;
+          this.acceptEnrollment(draft);
           this.enrollmentSaving.set(false);
           this.enrollmentOpen.set(false);
           this.enrollmentModal.set('none');
@@ -590,7 +634,7 @@ export class MobileHealthComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (draft) => {
-          this.enrollment = { ...draft };
+          this.acceptEnrollment(draft);
           this.enrollmentSaving.set(false);
           this.enrollmentOpen.set(false);
           this.activePage.set('home');
@@ -661,6 +705,9 @@ export class MobileHealthComponent implements OnInit {
       {
         id: `new-${Date.now()}`,
         name,
+        ...this.newDependent,
+        firstName,
+        lastName,
         relationship: this.newDependent.relationship,
         selected: true,
       },
@@ -728,7 +775,7 @@ export class MobileHealthComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (draft) => {
-          this.enrollment = { ...draft };
+          this.acceptEnrollment(draft);
           this.enrollmentSaving.set(false);
           done?.();
         },
@@ -779,7 +826,7 @@ export class MobileHealthComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (data) => {
-          this.draftMbiRecords = data.map((record) => ({ ...record }));
+          this.acceptMbiRecords(data);
           this.mbiSaved.set(true);
           this.mbiBusy.set(false);
           this.activePage.set('home');
@@ -806,6 +853,7 @@ export class MobileHealthComponent implements OnInit {
   }
 
   protected cancelMbi(): void {
+    this.draftMbiRecords = this.confirmedMbiRecords.map((record) => ({ ...record }));
     const token = window.__mobileAuth?.token;
     if (token) this.loadMbi(token);
     this.mbiSaved.set(false);
@@ -955,8 +1003,8 @@ export class MobileHealthComponent implements OnInit {
     ]);
     if (this.destroyRef.destroyed) return;
     if (cachedHealth) this.apply(cachedHealth);
-    if (cachedMbi) this.draftMbiRecords = cachedMbi.map((record) => ({ ...record }));
-    if (cachedEnrollment) this.enrollment = { ...cachedEnrollment };
+    if (cachedMbi) this.acceptMbiRecords(cachedMbi);
+    if (cachedEnrollment) this.acceptEnrollment(cachedEnrollment);
 
     const token = window.__mobileAuth?.token;
     this.loading.set(true);
@@ -1000,8 +1048,7 @@ export class MobileHealthComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (data) => {
-          this.draftMbiRecords = data.map((record) => ({ ...record }));
-          void this.cache.write('health-mbi', this.draftMbiRecords);
+          this.acceptMbiRecords(data);
           this.selectedMbiIndex.set(
             Math.min(this.selectedMbiIndex(), Math.max(this.draftMbiRecords.length - 1, 0)),
           );
@@ -1022,8 +1069,7 @@ export class MobileHealthComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (draft) => {
-          this.enrollment = draft ? { ...draft } : null;
-          void this.cache.write('health-enrollment', this.enrollment);
+          this.acceptEnrollment(draft);
         },
         error: () => {
           /* Retain the last loaded enrollment during an outage. */

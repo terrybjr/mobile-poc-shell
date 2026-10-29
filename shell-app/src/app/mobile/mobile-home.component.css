@@ -347,3 +347,47 @@
     grid-template-columns: 1fr;
   }
 }
+
+.leave-dialog {
+  width: calc(100% - 32px);
+  max-width: 390px;
+  max-height: 85dvh;
+  overflow-y: auto;
+  padding: 24px;
+  border: 1px solid var(--m-border);
+  border-radius: 12px;
+  color: var(--m-text);
+  background: var(--m-surface);
+}
+
+.leave-dialog::backdrop {
+  background: #031a2dd9;
+}
+
+.leave-dialog h2 {
+  margin-top: 0;
+  font-size: 22px;
+}
+.leave-dialog p {
+  color: var(--m-muted);
+}
+.leave-actions {
+  display: grid;
+  gap: 10px;
+  margin-top: 20px;
+}
+.leave-actions button {
+  min-height: 48px;
+  border: 1px solid var(--m-teal);
+  border-radius: 8px;
+  padding: 12px;
+  color: var(--m-white);
+  background: var(--m-teal);
+  font: inherit;
+  font-weight: 700;
+}
+.leave-actions .discard-button {
+  color: var(--m-error);
+  border-color: var(--m-error-border);
+  background: var(--m-white);
+}
