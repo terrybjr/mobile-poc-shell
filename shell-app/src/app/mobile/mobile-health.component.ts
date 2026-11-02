@@ -612,13 +612,17 @@ export class MobileHealthComponent implements OnInit {
     const token = window.__mobileAuth?.token;
     if (!token || !this.enrollment || this.enrollmentSaving()) return;
 
+    // Recheck existing acknowledgments on resume; do not turn the stricter
+    // mobile step controls into new mandatory fields in the backend contract.
     if (
+      !this.enrollment.legalAccepted ||
+      !this.enrollment.demographicVerified ||
       !this.enrollment.acknowledgmentAccepted ||
       !this.enrollment.signature.trim() ||
       !this.hasPlanSelection()
     ) {
       this.enrollmentError.set(
-        'Review the required acceptance, signature, and plan selections before submitting.',
+        'Review the disclosure, demographic confirmation, acceptance, signature, and plan selections before submitting.',
       );
       return;
     }
