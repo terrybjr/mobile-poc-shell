@@ -2,6 +2,10 @@
 
 This repository is the independently deployable MyTRS Shell product. It owns the Angular Module Federation host, the Capacitor mobile target, and the WAR that serves the Shell at `/mobile-poc/wss-apps/`.
 
+The POC tests how the team's existing Angular, TypeScript, forms and REST skills can produce a dedicated mobile-feeling app through Capacitor while desktop views continue to coexist. The installed Shell bundles purpose-built mobile web views; it does not turn the desktop Health screen into its phone UI by resizing or loading the hosted portal.
+
+Reuse already implemented includes mobile session/cache services shared across phone screens and the existing backend API/service contracts. Health's mobile and desktop frontend workflows and HTTP calls are still separate implementations; a common typed API/domain-service layer is a future extraction, not a completed feature. Capacitor reduces deep platform implementation work, but permissions, plugin registration, signing and physical-device testing remain necessary. The iOS camera OCR and device-lock integrations also include small custom Swift bridges.
+
 ## Project layout
 
 - `shell-app/` — Angular Shell source, browser composition, and native-only mobile package.
