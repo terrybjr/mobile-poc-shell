@@ -4,6 +4,8 @@ This repository is the independently deployable MyTRS Shell product. It owns the
 
 The POC tests how the team's existing Angular, TypeScript, forms and REST skills can produce a dedicated mobile-feeling app through Capacitor while desktop views continue to coexist. The installed Shell bundles purpose-built mobile web views; it does not turn the desktop Health screen into its phone UI by resizing or loading the hosted portal.
 
+Health and Pension demonstrate complementary paths. Health uses common backend APIs with dedicated mobile and desktop views. Pension demonstrates strangler-pattern modernization: keep the legacy Struts/JSP application while exposing existing capabilities through REST to a unique new Angular interface, co-developed alongside it. The current Angular consumer is the Shell's `MobilePensionComponent` plus the Home summary; a separate desktop Angular Pension route is not implemented here. The REST facade and legacy actions reuse `PensionService` and its store, rather than the facade invoking Struts action methods. The old UI is deliberately retained, with no visual-parity or rewrite requirement.
+
 Reuse already implemented includes mobile session/cache services shared across phone screens and the existing backend API/service contracts. Health's mobile and desktop frontend workflows and HTTP calls are still separate implementations; a common typed API/domain-service layer is a future extraction, not a completed feature. Capacitor reduces deep platform implementation work, but permissions, plugin registration, signing and physical-device testing remain necessary. The iOS camera OCR and device-lock integrations also include small custom Swift bridges.
 
 ## Project layout
